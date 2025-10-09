@@ -1,0 +1,14 @@
+[Unit]
+Description=Canne Intelligente
+After=network.target nvargus-daemon.service
+
+[Service]
+User=canneblancheintelligente
+WorkingDirectory=/home/canneblancheintelligente/Documents/PRI_IRFAN
+ExecStartPre=/bin/sh -c 'chmod 666 /dev/ttyTHS1'
+ExecStart=/usr/bin/python3 /home/canneblancheintelligente/Documents/PRI_IRFAN/main.py
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

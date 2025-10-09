@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="Système d'aide à la navigation pour Aveugles" company="PRI Alexandre" webLink="" view-date="2025-10-01" view-index="0" gantt-divider-location="650" resource-divider-location="255" version="2.8.11" locale="fr">
+    <description/>
+    <view zooming-state="default:8" id="gantt-chart">
+        <field id="tpd3" name="Nom" width="338" order="0"/>
+        <field id="tpd4" name="Date de début" width="89" order="1"/>
+        <field id="tpd5" name="Date de fin" width="73" order="2"/>
+        <field id="tpd7" name="Avancée" width="61" order="3"/>
+        <field id="tpd6" name="Durée" width="70" order="4"/>
+        <option id="color.recent">
+            <![CDATA[#000000]]>
+        </option>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Nom" width="190" order="0"/>
+        <field id="1" name="Rôle par défaut" width="61" order="1"/>
+    </view>
+    <!-- -->
+    <calendars base-id="france">
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="1" mon="0" tue="0" wed="0" thu="0" fri="0" sat="1"/>
+            <only-show-weekends value="false"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+        <date year="" month="1" date="1" type="HOLIDAY">
+            <![CDATA[New Year's Day]]>
+        </date>
+        <date year="" month="5" date="1" type="HOLIDAY">
+            <![CDATA[Labour Day]]>
+        </date>
+        <date year="" month="5" date="8" type="HOLIDAY">
+            <![CDATA[V-E Day]]>
+        </date>
+        <date year="" month="7" date="14" type="HOLIDAY">
+            <![CDATA[Bastille Day]]>
+        </date>
+        <date year="" month="8" date="15" type="HOLIDAY">
+            <![CDATA[Assumption Day]]>
+        </date>
+        <date year="" month="11" date="1" type="HOLIDAY">
+            <![CDATA[All Saints Day]]>
+        </date>
+        <date year="" month="11" date="11" type="HOLIDAY">
+            <![CDATA[Armistice Day]]>
+        </date>
+        <date year="" month="12" date="25" type="HOLIDAY">
+            <![CDATA[Christmas Day]]>
+        </date>
+        <date year="2008" month="5" date="12" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2009" month="6" date="1" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2009" month="7" date="13" type="NEUTRAL">
+            <![CDATA[Bastille Day]]>
+        </date>
+        <date year="2010" month="4" date="5" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2010" month="5" date="13" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2010" month="5" date="24" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2011" month="4" date="25" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2011" month="5" date="29" type="NEUTRAL">
+            <![CDATA[Mothers Day]]>
+        </date>
+        <date year="2011" month="6" date="2" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2011" month="6" date="13" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2011" month="6" date="19" type="NEUTRAL">
+            <![CDATA[Fathers Day]]>
+        </date>
+        <date year="2012" month="1" date="2" type="HOLIDAY">
+            <![CDATA[New Years Day (in lieu)]]>
+        </date>
+        <date year="2012" month="4" date="9" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2012" month="5" date="17" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2012" month="5" date="28" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2012" month="6" date="3" type="NEUTRAL">
+            <![CDATA[Mothers Day]]>
+        </date>
+        <date year="2012" month="6" date="17" type="NEUTRAL">
+            <![CDATA[Fathers Day]]>
+        </date>
+        <date year="2012" month="11" date="12" type="HOLIDAY">
+            <![CDATA[Armistice Day (in Lieu)]]>
+        </date>
+        <date year="2012" month="12" date="25" type="HOLIDAY">
+            <![CDATA[Christmas Day]]>
+        </date>
+        <date year="2013" month="4" date="1" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2013" month="5" date="9" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2013" month="5" date="20" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2013" month="5" date="26" type="NEUTRAL">
+            <![CDATA[Mothers Day]]>
+        </date>
+        <date year="2013" month="6" date="16" type="NEUTRAL">
+            <![CDATA[Fathers Day]]>
+        </date>
+        <date year="2014" month="4" date="21" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2014" month="5" date="25" type="NEUTRAL">
+            <![CDATA[Mothers Day]]>
+        </date>
+        <date year="2014" month="5" date="29" type="NEUTRAL">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2014" month="6" date="9" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2014" month="6" date="15" type="HOLIDAY">
+            <![CDATA[Fathers Day]]>
+        </date>
+        <date year="2015" month="4" date="6" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2015" month="5" date="14" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2015" month="5" date="24" type="NEUTRAL">
+            <![CDATA[Mothers Day]]>
+        </date>
+        <date year="2015" month="5" date="25" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2015" month="6" date="21" type="NEUTRAL">
+            <![CDATA[Fathers Day]]>
+        </date>
+        <date year="2016" month="3" date="28" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2016" month="5" date="5" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2016" month="5" date="16" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2016" month="5" date="29" type="NEUTRAL">
+            <![CDATA[Mothers Day]]>
+        </date>
+        <date year="2016" month="6" date="19" type="NEUTRAL">
+            <![CDATA[Fathers Day]]>
+        </date>
+        <date year="2016" month="12" date="26" type="HOLIDAY">
+            <![CDATA[Christmas Day (observed)]]>
+        </date>
+        <date year="2017" month="4" date="17" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2017" month="5" date="25" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2017" month="5" date="28" type="NEUTRAL">
+            <![CDATA[Mother's Day]]>
+        </date>
+        <date year="2017" month="6" date="5" type="HOLIDAY">
+            <![CDATA[Whitmonday]]>
+        </date>
+        <date year="2017" month="6" date="18" type="NEUTRAL">
+            <![CDATA[Father's Day]]>
+        </date>
+        <date year="2018" month="4" date="2" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2018" month="5" date="10" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2018" month="5" date="21" type="HOLIDAY">
+            <![CDATA[Whit Monday]]>
+        </date>
+        <date year="2018" month="5" date="27" type="NEUTRAL">
+            <![CDATA[Mother's Day]]>
+        </date>
+        <date year="2018" month="6" date="17" type="NEUTRAL">
+            <![CDATA[Father's Day]]>
+        </date>
+        <date year="2019" month="4" date="22" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2019" month="5" date="30" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2019" month="6" date="10" type="HOLIDAY">
+            <![CDATA[Whit Monday]]>
+        </date>
+        <date year="2019" month="5" date="26" type="NEUTRAL">
+            <![CDATA[Mother's Day]]>
+        </date>
+        <date year="2019" month="6" date="16" type="NEUTRAL">
+            <![CDATA[Father's Day]]>
+        </date>
+        <date year="2020" month="4" date="13" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2020" month="5" date="21" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2020" month="6" date="1" type="HOLIDAY">
+            <![CDATA[Whit Monday]]>
+        </date>
+        <date year="2020" month="6" date="7" type="NEUTRAL">
+            <![CDATA[Mother's Day]]>
+        </date>
+        <date year="2020" month="6" date="21" type="NEUTRAL">
+            <![CDATA[Father's Day]]>
+        </date>
+        <date year="2021" month="4" date="5" type="HOLIDAY">
+            <![CDATA[Easter Monday]]>
+        </date>
+        <date year="2021" month="5" date="13" type="HOLIDAY">
+            <![CDATA[Ascension Day]]>
+        </date>
+        <date year="2021" month="5" date="24" type="HOLIDAY">
+            <![CDATA[Whit Monday]]>
+        </date>
+        <date year="2021" month="5" date="30" type="NEUTRAL">
+            <![CDATA[Mother's Day]]>
+        </date>
+        <date year="2021" month="6" date="20" type="NEUTRAL">
+            <![CDATA[Father's Day]]>
+        </date>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="8" name="Initialisation du projet" color="#000000" meeting="false" start="2025-09-24" duration="7" complete="46" thirdDate="2025-09-24" thirdDate-constraint="0" expand="true">
+            <depend id="9" type="2" difference="0" hardness="Strong"/>
+            <task id="60" name="Rédaction du plan de développement" color="#8cb6ce" meeting="false" start="2025-09-24" duration="4" complete="95" thirdDate="2024-09-24" thirdDate-constraint="0" expand="true" cost-manual-value="0.0" cost-calculated="true"/>
+            <task id="2" name="Appropriation du projet existant" meeting="false" start="2025-09-24" duration="7" complete="25" expand="true"/>
+            <task id="6" name="Rédaction de la FOP" meeting="false" start="2025-09-24" duration="2" complete="100" expand="true"/>
+            <task id="48" name="Préparation du Kick-Off" meeting="false" start="2025-09-29" duration="3" complete="10" expand="true"/>
+            <task id="119" name="Kick-Off" color="#000000" meeting="true" start="2025-10-03" duration="0" complete="0" thirdDate="2024-10-02" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="9" name="Spécifications" color="#000000" meeting="false" start="2025-10-03" duration="13" complete="0" thirdDate="2025-10-14" thirdDate-constraint="0" expand="true">
+            <depend id="10" type="2" difference="0" hardness="Strong"/>
+            <task id="85" name="Rédaction des spécifications" color="#8cb6ce" meeting="false" start="2025-10-03" duration="10" complete="0" thirdDate="2024-10-14" thirdDate-constraint="0" expand="true"/>
+            <task id="32" name="Spécification des améliorations logiciel" color="#8cb6ce" meeting="false" start="2025-10-03" duration="7" complete="0" thirdDate="2024-10-14" thirdDate-constraint="0" expand="true"/>
+            <task id="100" name="Spécification des besoins utilisateur" color="#8cb6ce" meeting="false" start="2025-10-03" duration="7" complete="0" thirdDate="2024-10-14" thirdDate-constraint="0" expand="true" cost-manual-value="0.0" cost-calculated="true"/>
+            <task id="29" name="Rédaction du SF1N" color="#8cb6ce" meeting="false" start="2025-10-14" duration="2" complete="0" thirdDate="2024-10-14" thirdDate-constraint="0" expand="true"/>
+            <task id="3" name="Revue spécifications" color="#000000" meeting="true" start="2025-10-22" duration="0" complete="0" thirdDate="2024-10-18" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="10" name="Conception générale" color="#000000" meeting="false" start="2025-10-22" duration="10" complete="0" thirdDate="2025-11-03" thirdDate-constraint="0" expand="true">
+            <depend id="13" type="2" difference="0" hardness="Strong"/>
+            <task id="38" name="Rédaction du diagramme des classes" color="#8cb6ce" meeting="false" start="2025-10-22" duration="10" complete="0" thirdDate="2024-11-04" thirdDate-constraint="0" expand="true"/>
+            <task id="110" name="Rédaction du diagramme des cas d'utilisations" meeting="false" start="2025-10-22" duration="7" complete="0" expand="true"/>
+            <task id="112" name="Rédaction du diagramme des flots de données" meeting="false" start="2025-10-22" duration="5" complete="0" expand="true"/>
+            <task id="11" name="Revue conception générale" color="#000000" meeting="true" start="2025-11-05" duration="0" complete="0" thirdDate="2024-11-04" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="13" name="Conception détaillée" color="#000000" meeting="false" start="2025-11-05" duration="9" complete="0" thirdDate="2024-11-18" thirdDate-constraint="0" expand="true">
+            <depend id="16" type="2" difference="0" hardness="Strong"/>
+            <task id="39" name="Appréhention des programmes existants" color="#8cb6ce" meeting="false" start="2025-11-05" duration="9" complete="0" thirdDate="2025-11-24" thirdDate-constraint="0" expand="true"/>
+            <task id="55" name="Revue conception détaillée" meeting="true" start="2025-11-19" duration="0" complete="0" expand="true"/>
+        </task>
+        <task id="16" name="Réalisation" color="#000000" meeting="false" start="2025-11-19" duration="35" complete="0" thirdDate="2025-12-18" thirdDate-constraint="0" expand="true">
+            <depend id="19" type="2" difference="0" hardness="Strong"/>
+            <task id="40" name="Programmation / Modification des programmes" meeting="false" start="2025-11-19" duration="35" complete="0" expand="true"/>
+            <task id="18" name="Revue réalisation" color="#000000" meeting="true" start="2026-01-09" duration="0" complete="0" thirdDate="2026-01-13" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="19" name="Tests unitiares" color="#000000" meeting="false" start="2026-01-09" duration="10" complete="0" thirdDate="2025-01-21" thirdDate-constraint="0" expand="true">
+            <depend id="22" type="2" difference="0" hardness="Strong"/>
+            <task id="42" name="Test du programme par fonctions" meeting="false" start="2026-01-09" duration="10" complete="0" expand="true"/>
+            <task id="21" name="Revue tests unitaires" meeting="true" start="2026-01-23" duration="0" complete="0" expand="true"/>
+        </task>
+        <task id="22" name="Tests d'intégration" color="#000000" meeting="false" start="2026-01-23" duration="10" complete="0" thirdDate="2026-02-03" thirdDate-constraint="0" expand="true">
+            <depend id="25" type="2" difference="0" hardness="Strong"/>
+            <task id="23" name="Tests du fonctionnement global" meeting="false" start="2026-01-23" duration="10" complete="0" expand="true"/>
+            <task id="126" name="Revue tests d'intégrations" color="#000000" meeting="true" start="2026-02-06" duration="0" complete="0" thirdDate="2026-02-09" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="25" name="Validation/Recette" color="#000000" meeting="false" start="2026-02-06" duration="7" complete="0" thirdDate="2026-02-10" thirdDate-constraint="0" expand="true">
+            <depend id="1" type="2" difference="0" hardness="Strong"/>
+            <task id="26" name="Validation du fonctionnement avec le client" meeting="false" start="2026-02-06" duration="4" complete="0" expand="true"/>
+            <task id="45" name="Correction des réserves" meeting="false" start="2026-02-06" duration="7" complete="0" expand="true"/>
+            <task id="27" name="Recette" meeting="true" start="2026-02-17" duration="0" complete="0" expand="true"/>
+        </task>
+        <task id="1" name="Clôture du projet" color="#000000" meeting="true" start="2026-02-17" duration="0" complete="0" thirdDate="2025-02-17" thirdDate-constraint="0" expand="true"/>
+    </tasks>
+    <resources>
+        <resource id="0" name="Alexandre BOURCIER" function="Default:1" contacts="" phone=""/>
+    </resources>
+    <allocations>
+        <allocation task-id="8" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="9" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="10" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="13" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="16" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="19" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="22" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="25" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+        <allocation task-id="1" resource-id="0" function="Default:1" responsible="true" load="100.0"/>
+    </allocations>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+</project>
