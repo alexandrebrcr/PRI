@@ -1,0 +1,18 @@
+Liens références des capteurs pour le PRI 
+
+vibreur : 
+
+https://wiki.dfrobot.com/Gravity__Vibration_Module_SKU__DFR0440
+https://www.gotronic.fr/art-module-vibreur-gravity-dfr0440-34310.htm
+
+
+Bouton poussoir : 
+
+https://wiki.dfrobot.com/DFRobot_Digital_Push_Button_SKU_DFR0029#Sample_Code
+https://www.dfrobot.com/product-1096.html
+https://www.gotronic.fr/art-module-bouton-poussoir-gravity-dfr0029-b-27904.htm
+
+
+Capteur ultrason A02YYUW : 
+
+https://wiki.dfrobot.com/_A02YYUW_Waterproof_Ultrasonic_Sensor_SKU_SEN0311
