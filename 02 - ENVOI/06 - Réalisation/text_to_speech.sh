@@ -3,7 +3,7 @@
 SOUND_CARD_IDX=2 # Changer si nécessaire pour votre carte son
 
 if ! [ -x "$(command -v espeak)" ]; then
-	echo 'Erreur : espeak non installé.' >&2
+	echo 'Erreur : easpeak non installé.' >&2
 	exit 1
 fi
 

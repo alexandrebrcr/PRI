@@ -38,15 +38,11 @@ def main():
     current_mode = modes[current_mode_index]
 
     # Annonce du démarrage du système
-    sound.speak("Le système a démarré")
+    sound.speak("Le système à démarrer")
 
     # Annonce du mode initial
     sound.speak(f"Mode {current_mode}")
     print(f"Mode {current_mode}")
-
-    # Variables d'état pour anti-spam/retours haptiques
-    last_no_detection_announce_time = 0.0
-    last_vibration_time = 0.0
 
     try:
         # Boucle principale pour gérer les fonctionnalités des deux modes
@@ -63,36 +59,27 @@ def main():
             if current_mode == "exploration":
                 detections = camera.get_detections()  # Objets détectés par la caméra
                 distance = ultrasonic_sensor.get_distance()  # Distance mesurée par le capteur ultrason
-                if distance is not None:
-                    print(f"{distance} centimètres")  # Affiche la distance brute
+                print(f"{distance} centimètres")  # Affiche la distance brute
 
                 if detections:
                     for detection in detections:
+                        # annonce la distance et le nom de l'objet détecté
+                        formatted_distance = format_distance_in_meters(distance)
                         class_name = camera.get_class_name(detection.ClassID)
-                        # Annonce si la distance est disponible
-                        if distance is not None:
-                            formatted_distance = format_distance_in_meters(distance)
-                            sound.speak(f"{class_name} à {formatted_distance}")
-                            print(f"{class_name} à {formatted_distance}")
-                        else:
-                            # Distance indisponible : annoncer seulement l'objet
-                            sound.speak(f"{class_name}")
-                            print(f"{class_name}")
+                        confidence = detection.Confidence
+                        sound.speak(f"{class_name} à {formatted_distance}")
+                        print(f"{class_name} à {formatted_distance}")
                 else:
-                    # Aucune détection: annonce limitée à une fois toutes les 3 secondes
-                    now = time.time()
-                    if now - last_no_detection_announce_time > 3.0:
-                        sound.speak("Aucun objet détecté")
-                        print("Aucun objet détecté")
-                        last_no_detection_announce_time = now
+                    # Aucune détection
+                    sound.speak("Aucun objet détecter")
+                    print("Aucun objet détecter")
 
             # Mode marche : vérifie la distance et annonce de la distance
             elif current_mode == "marche":
                 distance = ultrasonic_sensor.get_distance()
-                if distance is not None:
-                    formatted_distance = format_distance_in_meters(distance)
-                    # Annonce si la distance se situe dans les plages définies
-                    if 400 <= distance <= 500: # 4 à 5 mètres
+                formatted_distance = format_distance_in_meters(distance)
+                if distance:
+                    if 400 <= distance <= 500: # Distance captée entre 4 et 5 mètres
                         sound.speak(f"{formatted_distance}")
                         print(f"{distance} centimètres")
                     elif 300 <= distance <= 400:
@@ -104,11 +91,6 @@ def main():
                     elif distance < 200:
                         sound.speak(f"{formatted_distance}")
                         print(f"{distance} centimètres")
-                        # Retour haptique pour obstacle proche, avec anti-spam (~0.5s)
-                        now = time.time()
-                        if now - last_vibration_time > 0.5:
-                            vibration_motor.vibrate(0.1)
-                            last_vibration_time = now
                     else:
                         sound.speak("Rien")
                         time.sleep(0.25)
@@ -124,14 +106,6 @@ def main():
         button.cleanup()
         vibration_motor.cleanup()
         ultrasonic_sensor.cleanup()
-        try:
-            camera.cleanup()
-        except Exception:
-            pass
-        try:
-            sound.cleanup()
-        except Exception:
-            pass
         print("Nettoyage complet")
 
 if __name__ == "__main__":

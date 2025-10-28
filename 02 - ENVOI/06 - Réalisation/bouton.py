@@ -13,9 +13,8 @@ class Button:
         :param button_pin: Numéro du GPIO auquel le bouton est connecté (mode BOARD).
         """
         self.button_pin = button_pin
-        self.last_state = GPIO.LOW  # État précédent du bouton (pour fallback).
+        self.last_state = GPIO.LOW  # État précédent du bouton.
         self.debounce_time = 0.1  # Temps de rebond pour éviter les détections multiples.
-        self._pressed_flag = False  # Indique qu'un front montant a été détecté.
 
         # Configuration du GPIO en mode BOARD (numérotation physique des broches).
         GPIO.setmode(GPIO.BOARD)
@@ -23,36 +22,13 @@ class Button:
         # Configuration du pin du bouton en entrée avec pull-down.
         GPIO.setup(self.button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-        # Détection d'événement sur front montant pour éviter le polling constant.
-        try:
-            GPIO.add_event_detect(
-                self.button_pin,
-                GPIO.RISING,
-                callback=self._on_press,
-                bouncetime=int(self.debounce_time * 1000)
-            )
-        except Exception:
-            # Si l'événement n'est pas disponible, on tombera sur le fallback dans wait_for_press()
-            pass
-
-    def _on_press(self, channel):
-        """
-        Callback déclenché lors d'un front montant (appui bouton).
-        """
-        self._pressed_flag = True
-
     def wait_for_press(self):
         """
         Vérifie si le bouton a été pressé en évitant les rebonds.
         :return: True si un appui est détecté, sinon False.
         """
-        # Si un événement a été détecté, consommer le flag et retourner True
-        if self._pressed_flag:
-            self._pressed_flag = False
-            return True
-
-        # Fallback par polling si add_event_detect n'a pas pu être configuré
         current_state = GPIO.input(self.button_pin)  # Lire l'état actuel du bouton.
+        
         # Détection de la transition de LOW à HIGH (bouton pressé).
         if current_state == GPIO.HIGH and self.last_state == GPIO.LOW:
             # Pause pour éviter les rebonds.
@@ -71,10 +47,6 @@ class Button:
         """
         Nettoie le GPIO du pin pour éviter les conflits après l'exécution du programme.
         """
-        try:
-            GPIO.remove_event_detect(self.button_pin)
-        except Exception:
-            pass
         GPIO.cleanup(self.button_pin)
 
 # Exemple d'utilisation

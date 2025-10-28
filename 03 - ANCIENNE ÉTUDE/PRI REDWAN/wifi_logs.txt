@@ -1,0 +1,7 @@
+SSID=vivo X200 Pro
+PASSWORD=27276969
+NAME=Rasp10
+Seuil_detection=0.4
+capture_intervalle=5
+server_url=https://visit-api.univ-tours.fr/visit-api/logs/record
+clientId=eed09916-bd76-4564-9dc4-5bf45d49b64a
