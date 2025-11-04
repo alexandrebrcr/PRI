@@ -47,6 +47,7 @@ def main():
     # Variables d'état pour anti-spam/retours haptiques
     last_no_detection_announce_time = 0.0
     last_vibration_time = 0.0
+    last_distance_error_announce_time = 0.0
 
     try:
         # Boucle principale pour gérer les fonctionnalités des deux modes
@@ -113,8 +114,12 @@ def main():
                         sound.speak("Rien")
                         time.sleep(0.25)
                 else:
-                    # Erreur lors de la lecture de la distance
-                    sound.speak("Erreur de lecture de distance")
+                    # Erreur lors de la lecture de la distance (anti-spam)
+                    now = time.time()
+                    if now - last_distance_error_announce_time > 3.0:
+                        sound.speak("Erreur de lecture de distance")
+                        print("Erreur de lecture de distance")
+                        last_distance_error_announce_time = now
 
     except KeyboardInterrupt:
         # Interrompt proprement le programme avec Ctrl + C

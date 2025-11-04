@@ -11,18 +11,36 @@ class UltrasonicSensor:
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
+        self.serial_conn = None
+        # Anti-spam pour logs
+        self._last_log = 0.0
+        self._log_interval = 5.0  # secondes
+        # Tentative d'ouverture initiale
+        self._open_serial()
 
+    def _log_throttled(self, msg: str):
+        """Affiche un message au plus une fois toutes les _log_interval secondes."""
+        now = time.time()
+        if now - self._last_log >= self._log_interval:
+            print(msg)
+            self._last_log = now
+
+    def _open_serial(self):
+        """Essaie d'ouvrir le port série si fermé, avec gestion des permissions."""
+        if self.serial_conn and getattr(self.serial_conn, "is_open", False):
+            return True
         try:
-            # Initialisation de la connexion série
             self.serial_conn = serial.Serial(
                 port=self.port,
                 baudrate=self.baudrate,
                 timeout=self.timeout
             )
+            return True
         except serial.SerialException as e:
-            # Gestion des erreurs lors de l'initialisation
-            print(f"Erreur init : {e}")
+            # Log limité pour éviter le spam
+            self._log_throttled(f"Erreur ouverture série ({self.port}) : {e}")
             self.serial_conn = None
+            return False
 
     def get_distance(self):
         """
@@ -31,39 +49,37 @@ class UltrasonicSensor:
         """
         # Vérifie si la connexion série est disponible
         if not self.serial_conn or not self.serial_conn.is_open:
-            print("Connexion série non disponible")
-            return None
+            # Tente une réouverture silencieuse
+            if not self._open_serial():
+                return None
 
         try:
-            # Vider le buffer série pour éviter le blocage des données reçues
+            # Vider le buffer d'entrée pour éviter l'accumulation
             self.serial_conn.reset_input_buffer()
 
-            # Lire les 4 octets envoyés par le capteur
-            data = []
-            while len(data) < 4:
-                byte = self.serial_conn.read()
-                if byte:
-                    data.append(byte)
+            # Lecture des 4 octets du capteur (retourne < 4 si timeout)
+            data = self.serial_conn.read(4)
+            if len(data) != 4:
+                return None
 
             # Vérification des données reçues
-            if data[0] == b'\xff':  # Premier octet doit être 0xFF
-                checksum = (data[0][0] + data[1][0] + data[2][0]) & 0xFF
-                if checksum == data[3][0]:  # Vérification du checksum
-                    distance = (data[1][0] << 8) + data[2][0]  # Calcul de la distance
-                    if distance > 30:  # Ignore les distances en dessous de 30 cm
-                        return distance / 10  # Retourne la distance en cm
-                    else:
-                        print("En-dessous de la limite inférieure.")
-                        return None
-                else:
-                    print("Erreur : Checksum invalide.")
-                    return None
+            hdr, hi, lo, chksum = data[0], data[1], data[2], data[3]
+            if hdr != 0xFF:
+                return None
+
+            checksum = (hdr + hi + lo) & 0xFF
+            if checksum != chksum:
+                # Checksum invalide
+                return None
+
+            distance = (hi << 8) + lo  # en mm si capteur type JSN-SR04T série (ex.)
+            if distance > 30:  # Ignore < 30 (bruit/proximité capteur)
+                return distance / 10  # conversion en cm
             else:
-                print("Erreur : Données invalides.")
                 return None
         except Exception as e:
             # Gestion des erreurs lors de la lecture des données.
-            print(f"Erreur lors de la lecture des données : {e}")
+            self._log_throttled(f"Erreur lecture données ultrason : {e}")
             return None
 
     def cleanup(self):
