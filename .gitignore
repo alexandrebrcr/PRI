@@ -1,1 +1,7 @@
-/Sujets.xlsx
+__pycache__
+*.docs
+*.pdf
+*.xlsx
+*.gan
+*.drawio
+*.png
