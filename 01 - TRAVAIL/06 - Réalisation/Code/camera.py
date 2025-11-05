@@ -15,10 +15,10 @@ class Camera:
         :param threshold: Seuil minimum de confiance pour les détections.
         :param headless: Si True, désactive l'utilisation d'EGL/affichage (utile sans écran).
         """
-        self.net = detectNet(model, threshold=threshold)  # Charge le modèle de détection.
+        argv = ['--headless'] if headless else []
+        self.net = detectNet(model, threshold=threshold, argv=argv)  # Charge le modèle de détection.
         # Source vidéo : caméra CSI (ou "/dev/video0" si nécessaire).
         # En mode headless, on passe l'argument pour éviter les erreurs EGL.
-        argv = ['--headless'] if headless else []
         self.camera = videoSource("csi://0", argv=argv)
 
     def get_detections(self):
