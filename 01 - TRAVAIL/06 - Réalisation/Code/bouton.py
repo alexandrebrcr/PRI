@@ -1,5 +1,5 @@
 # bouton.py
-# Ce fichier permet de gérer les appuie d'un bouton poussoir connecter au GPIO de la Jetson Nano sur le pin 11.
+# Ce fichier permet de gérer les appuis d'un bouton poussoir connecter au GPIO de la Jetson Nano sur le pin 11.
 # Le bouton est configuré pour détecter les appuis avec un mode pull-down.
 
 import Jetson.GPIO as GPIO
@@ -13,23 +13,20 @@ class Button:
         :param button_pin: Numéro du GPIO auquel le bouton est connecté (mode BOARD).
         """
         self.button_pin = button_pin
-    self.last_state = GPIO.LOW  # État précédent du bouton (mis à jour après setup).
+        self.last_state = GPIO.LOW  # État précédent du bouton (pour fallback).
         self.debounce_time = 0.1  # Temps de rebond pour éviter les détections multiples.
         self._pressed_flag = False  # Indique qu'un front montant a été détecté.
-    self._armed = False  # Devient True après avoir vu un état bas (évite faux positif au démarrage).
 
         # Configuration du GPIO en mode BOARD (numérotation physique des broches).
         GPIO.setmode(GPIO.BOARD)
 
-    # Configuration de la broche en entrée.
-    # NOTE: Sur Jetson, pull_up_down est ignoré. Prévoir une résistance externe.
-    GPIO.setup(self.button_pin, GPIO.IN)
+        # Configuration du pin du bouton en entrée avec pull-down.
+        GPIO.setup(self.button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-    # Laisse le signal se stabiliser puis initialise l'état.
-    time.sleep(0.02)
-    self.last_state = GPIO.input(self.button_pin)
-    # On n'arme la détection qu'après avoir observé un état bas (bouton relâché).
-    self._armed = (self.last_state == GPIO.LOW)
+        # Initialiser l'état précédent à partir de l'état réel de la broche
+        # pour éviter une fausse transition lors du premier cycle.
+        time.sleep(0.02)
+        self.last_state = GPIO.input(self.button_pin)
 
         # Détection d'événement sur front montant pour éviter le polling constant.
         try:
@@ -39,6 +36,10 @@ class Button:
                 callback=self._on_press,
                 bouncetime=int(self.debounce_time * 1000)
             )
+            # Vider un éventuel événement déjà en file (bruit au démarrage)
+            GPIO.event_detected(self.button_pin)
+            time.sleep(0.01)
+            GPIO.event_detected(self.button_pin)
         except Exception:
             # Si l'événement n'est pas disponible, on tombera sur le fallback dans wait_for_press()
             pass
@@ -47,9 +48,7 @@ class Button:
         """
         Callback déclenché lors d'un front montant (appui bouton).
         """
-        # N'accepte l'appui que si un état bas a été observé auparavant.
-        if self._armed:
-            self._pressed_flag = True
+        self._pressed_flag = True
 
     def wait_for_press(self):
         """
@@ -59,26 +58,21 @@ class Button:
         # Si un événement a été détecté, consommer le flag et retourner True
         if self._pressed_flag:
             self._pressed_flag = False
-            # Désarme jusqu'à ce que le bouton soit relâché (état bas observé)
-            self._armed = False
             return True
 
         # Fallback par polling si add_event_detect n'a pas pu être configuré
         current_state = GPIO.input(self.button_pin)  # Lire l'état actuel du bouton.
         # Détection de la transition de LOW à HIGH (bouton pressé).
-        if current_state == GPIO.HIGH and self.last_state == GPIO.LOW and self._armed:
+        if current_state == GPIO.HIGH and self.last_state == GPIO.LOW:
             # Pause pour éviter les rebonds.
             time.sleep(self.debounce_time)
             # Vérifie à nouveau si le bouton est toujours pressé.
             if GPIO.input(self.button_pin) == GPIO.HIGH:
                 self.last_state = GPIO.HIGH
-                self._armed = False
                 return True
         elif current_state == GPIO.LOW:
             # Met à jour l'état précédent lorsque le bouton est relâché.
             self.last_state = GPIO.LOW
-            # Ré-arme la détection après relâchement
-            self._armed = True
 
         return False
 
