@@ -15,10 +15,10 @@ def format_distance_message(distance_cm):
     """
     Formate le message vocal pour la distance.
     :param distance_cm: Distance en centimètres.
-    :return: Chaîne de caractères à prononcer (ex: "1.5 mètres")
+    :return: Chaîne de caractères à prononcer (ex: "150")
     """
-    meters = distance_cm / 100
-    return f"{meters:.1f} mètres"
+    #meters = distance_cm / 100
+    return f"{distance_cm:.1f}"
 
 def main():
     """

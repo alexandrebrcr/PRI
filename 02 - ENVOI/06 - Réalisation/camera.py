@@ -14,8 +14,11 @@ class Camera:
         :param model: Modèle utilisé pour détecter les objets (par défaut : "ssd-mobilenet-v2").
         :param threshold: Seuil minimum de confiance pour les détections.
         """
-        self.net = detectNet(model, threshold=threshold)  # Charge le modèle de détection.
-        self.camera = videoSource("csi://0")  # Source vidéo : caméra CSI (ou "/dev/video0" si nécessaire).
+        # Argv --headless permet de lancer le script sans interface graphique (écran)
+        # Cela fonctionne même si un écran est connecté (juste pas de fenêtre de prévisualisation)
+        argv = ['--headless']
+        self.net = detectNet(model, threshold=threshold, argv=argv)  # Charge le modèle de détection.
+        self.camera = videoSource("csi://0", argv=argv)  # Source vidéo : caméra CSI (ou "/dev/video0" si nécessaire).
 
     def get_detections(self):
         """
