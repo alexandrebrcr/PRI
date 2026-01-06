@@ -8,18 +8,17 @@ from jetson_utils import videoSource
 
 class Camera:
 
-    def __init__(self, model="ssd-mobilenet-v2", threshold=0.5, headless=True):
+    def __init__(self, model="ssd-mobilenet-v2", threshold=0.5):
         """
         Initialise la caméra et le modèle de détection.
         :param model: Modèle utilisé pour détecter les objets (par défaut : "ssd-mobilenet-v2").
         :param threshold: Seuil minimum de confiance pour les détections.
-        :param headless: Si True, désactive l'utilisation d'EGL/affichage (utile sans écran).
         """
-        argv = ['--headless'] if headless else []
+        # Argv --headless permet de lancer le script sans interface graphique (écran)
+        # Cela fonctionne même si un écran est connecté (juste pas de fenêtre de prévisualisation)
+        argv = ['--headless']
         self.net = detectNet(model, threshold=threshold, argv=argv)  # Charge le modèle de détection.
-        # Source vidéo : caméra CSI (ou "/dev/video0" si nécessaire).
-        # En mode headless, on passe l'argument pour éviter les erreurs EGL.
-        self.camera = videoSource("csi://0", argv=argv)
+        self.camera = videoSource("csi://0", argv=argv)  # Source vidéo : caméra CSI (ou "/dev/video0" si nécessaire).
 
     def get_detections(self):
         """
