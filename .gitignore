@@ -5,3 +5,4 @@ __pycache__
 *.gan
 *.drawio
 *.png
+*.txt

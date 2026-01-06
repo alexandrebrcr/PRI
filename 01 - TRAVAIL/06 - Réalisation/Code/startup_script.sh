@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Définition du dossier du projet (A ADAPTER selon votre vrai chemin sur la Jetson)
-PROJECT_DIR="/home/canneblancheintelligente/Documents/PRI_ALEXANDRE/PRI/01 - TRAVAIL/06 - Réalisation"
+PROJECT_DIR="/home/canneblancheintelligente/Documents/PRI_ALEXANDRE/PRI/01 - TRAVAIL/06 - Réalisation/Code"
 
 # Attente pour être sûr que le système est bien chargé (Réseau, HW)
 sleep 10
@@ -19,4 +19,4 @@ cd "$PROJECT_DIR" || exit 1
 
 # Lance le programme principal avec Python 3
 # La sortie est redirigée vers un fichier de log pour le débogage
-/usr/bin/python3 main.py > logs_canne.txt 2>&1
+python main.py > logs_canne.txt 2>&1

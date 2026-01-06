@@ -18,8 +18,7 @@ class Camera:
         # Cela fonctionne même si un écran est connecté (juste pas de fenêtre de prévisualisation)
         argv = ['--headless']
         self.net = detectNet(model, threshold=threshold, argv=argv)  # Charge le modèle de détection.
-        self.camera = videoSource("csi://0", argv=argv)  # Source vidéo : caméra CSI (ou "/dev/video0" si nécessaire).
-
+        self.camera = videoSource("csi://1", argv=argv + ["--input-width=1280", "--input-height=720", "--input-rate=30"])
     def get_detections(self):
         """
         Capture une image depuis la caméra et détecte les objets.
