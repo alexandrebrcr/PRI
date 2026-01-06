@@ -17,6 +17,15 @@ class Sound:
         :param queue_size: Taille max de la file d'attente de messages TTS.
         """
         self.script_path = script_path  # Chemin du script `text_to_speech.sh`.
+        
+        # CORRECTION AUTOMATIQUE DES PERMISSIONS
+        # Rend le script exécutable (chmod +x) pour éviter l'erreur [Errno 13] Permission denied
+        if os.path.exists(self.script_path):
+            try:
+                os.chmod(self.script_path, 0o755)
+            except Exception as e:
+                print(f"Attention: Impossible de changer les permissions du script son ({e})")
+
         self._queue = Queue(maxsize=queue_size)
         self._stop = False
         self._worker = threading.Thread(target=self._run_worker, daemon=True)

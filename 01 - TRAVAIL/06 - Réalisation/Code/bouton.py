@@ -16,6 +16,7 @@ class Button:
         self.last_state = GPIO.LOW  # État précédent du bouton (pour fallback).
         self.debounce_time = 0.1  # Temps de rebond pour éviter les détections multiples.
         self._pressed_flag = False  # Indique qu'un front montant a été détecté.
+        self.last_activation_time = 0.0 # Timestamp de la dernière activation validée
 
         # Configuration du GPIO en mode BOARD (numérotation physique des broches).
         GPIO.setmode(GPIO.BOARD)
@@ -40,15 +41,19 @@ class Button:
             GPIO.event_detected(self.button_pin)
             time.sleep(0.01)
             GPIO.event_detected(self.button_pin)
-        except Exception:
-            # Si l'événement n'est pas disponible, on tombera sur le fallback dans wait_for_press()
+        except Exception as e:
+            # Affiche l'erreur si l'événement n'est pas disponible
+            print(f"Attention: Impossible d'activer la détection d'événements ({e}). Passage en mode polling.")
             pass
 
     def _on_press(self, channel):
         """
         Callback déclenché lors d'un front montant (appui bouton).
         """
-        self._pressed_flag = True
+        # Anti-spam : on n'accepte pas de nouveaux événements trop rapprochés (0.3s)
+        # Cela filtre les rebonds au relâchement qui passeraient à travers le filtre hardware.
+        if time.time() - self.last_activation_time > 0.3:
+             self._pressed_flag = True
 
     def wait_for_press(self):
         """
@@ -58,18 +63,26 @@ class Button:
         # Si un événement a été détecté, consommer le flag et retourner True
         if self._pressed_flag:
             self._pressed_flag = False
+            self.last_activation_time = time.time() # Met à jour le timestamp
+            
+            # IMPORTANT : on met à jour last_state pour éviter que la logique de polling
+            # ci-dessous ne détecte ce même appui une deuxième fois si le bouton est encore enfoncé.
+            self.last_state = GPIO.HIGH
             return True
 
         # Fallback par polling si add_event_detect n'a pas pu être configuré
         current_state = GPIO.input(self.button_pin)  # Lire l'état actuel du bouton.
         # Détection de la transition de LOW à HIGH (bouton pressé).
         if current_state == GPIO.HIGH and self.last_state == GPIO.LOW:
-            # Pause pour éviter les rebonds.
-            time.sleep(self.debounce_time)
-            # Vérifie à nouveau si le bouton est toujours pressé.
-            if GPIO.input(self.button_pin) == GPIO.HIGH:
-                self.last_state = GPIO.HIGH
-                return True
+            # Vérification anti-spam logicielle aussi pour le polling
+            if time.time() - self.last_activation_time > 0.3:
+                # Pause pour éviter les rebonds.
+                time.sleep(self.debounce_time)
+                # Vérifie à nouveau si le bouton est toujours pressé.
+                if GPIO.input(self.button_pin) == GPIO.HIGH:
+                    self.last_state = GPIO.HIGH
+                    self.last_activation_time = time.time()
+                    return True
         elif current_state == GPIO.LOW:
             # Met à jour l'état précédent lorsque le bouton est relâché.
             self.last_state = GPIO.LOW

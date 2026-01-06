@@ -1,6 +1,8 @@
 # main.py
-# Il combine les interactions entre les différents composants : bouton, caméra, vibreur, capteur ultrason et synthèse vocale.
-# Le programme alterne entre deux modes : exploration et marche.
+# Programme principal de la Canne Blanche Intelligente
+# Gère deux modes : 
+# 1. Marche : Détection d'obstacles par ultrasons (< 2m)
+# 2. Exploration : Reconnaissance d'objets par caméra
 
 import time
 from bouton import Button
@@ -9,136 +11,156 @@ from camera import Camera
 from sound import Sound
 from ultrasonic import UltrasonicSensor
 
-def format_distance_in_meters(distance): 
+def format_distance_message(distance_cm): 
     """
-    Convertit une distance en centimètres en mètres avec une décimale.
-    Exemple : 320 cm devient "3.2".
-    :param distance: Distance en centimètres.
-    :return: Distance en mètres
+    Formate le message vocal pour la distance.
+    :param distance_cm: Distance en centimètres.
+    :return: Chaîne de caractères à prononcer (ex: "1.5 mètres")
     """
-    meters = distance / 100
-    return f"{meters:.1f}"
+    meters = distance_cm / 100
+    return f"{meters:.1f} mètres"
 
 def main():
     """
-    Fonction principale qui gère l'exécution du projet.
-    Elle initialise les composants, détecte les appuis sur le bouton pour changer de mode,
-    et exécute les fonctionnalités propres à chaque mode.
+    Boucle principale du programme.
     """
-    # Initialisation des composants matériels
-    button = Button(button_pin=11)  # Bouton connecté au GPIO 11
-    vibration_motor = Vibration(vibration_pin=13)  # Vibreur connecté au GPIO 13
-    ultrasonic_sensor = UltrasonicSensor(port="/dev/ttyTHS1", baudrate=9600)  # Capteur ultrason
-    camera = Camera()  # Caméra pour la détection d'objets
-    sound = Sound(script_path="./text_to_speech.sh")  # Synthèse vocale avec espeak
-
-    # Définition des modes disponibles
-    modes = ["exploration", "marche"]  # Modes de fonctionnement
-    current_mode_index = 0  # Index du mode actuel (par défaut : exploration)
-    current_mode = modes[current_mode_index]
-
-    # Annonce du démarrage du système
-    sound.speak("Le système a démarré")
-
-    # Annonce du mode initial
-    sound.speak(f"Mode {current_mode}")
-    print(f"Mode {current_mode}")
-
-    # Variables d'état pour anti-spam/retours haptiques
-    last_no_detection_announce_time = 0.0
-    last_vibration_time = 0.0
-    last_distance_error_announce_time = 0.0
-
+    print("Initialisation du système...")
+    
+    # 1. Initialisation des composants
+    # Bouton sur GPIO 11
     try:
-        # Boucle principale pour gérer les fonctionnalités des deux modes
+        button = Button(button_pin=11)
+    except Exception as e:
+        print(f"Erreur init bouton: {e}")
+        return
+
+    # Vibreur sur GPIO 13
+    try:
+        vibration_motor = Vibration(vibration_pin=13)
+    except Exception as e:
+        print(f"Erreur init vibreur: {e}")
+        return
+
+    # Capteur Ultrason sur le port série
+    ultrasonic_sensor = UltrasonicSensor(port="/dev/ttyTHS1", baudrate=9600)
+    
+    # Caméra AI
+    camera = Camera()
+    
+    # Module Son
+    sound = Sound(script_path="./text_to_speech.sh")
+
+    # 2. Définition des modes
+    # Mode 0 = Marche (Ultrasons)
+    # Mode 1 = Exploration (Caméra)
+    modes = ["MARCHE", "EXPLORATION"]
+    current_mode_index = 0
+    
+    sound.speak("Système démarré. Mode Marche.")
+    print("Système démarré. Mode Marche.")
+
+    # Variables de suivi temporel pour éviter le spam vocal
+    last_vocal_announce_time = 0.0
+    last_vibration_time = 0.0
+    
+    try:
         while True:
-            # Gestion du bouton pour changer de mode
+            # ---------------------------------------------------------
+            # 1. GESTION DU CHANGEMENT DE MODE (PRIORITAIRE)
+            # ---------------------------------------------------------
             if button.wait_for_press():
-                # Change le mode en alternant entre "exploration" et "marche"
+                # On passe au mode suivant
                 current_mode_index = (current_mode_index + 1) % len(modes)
                 current_mode = modes[current_mode_index]
+                
+                # Annonce du nouveau mode
                 sound.speak(f"Mode {current_mode}")
-                print(f"Mode {current_mode}")
-            
-            # Mode exploration : détection avec la caméra et mesure de la distance
-            if current_mode == "exploration":
-                detections = camera.get_detections()  # Objets détectés par la caméra
-                distance = ultrasonic_sensor.get_distance()  # Distance mesurée par le capteur ultrason
-                if distance is not None:
-                    print(f"{distance} centimètres")  # Affiche la distance brute
+                print(f" changement de mode -> {current_mode}")
+                
+                # Petite pause pour éviter de changer 2 fois si appui très long
+                time.sleep(0.5)
+                continue # On redémarre la boucle proprement dans le nouveau mode
 
-                if detections:
-                    for detection in detections:
-                        class_name = camera.get_class_name(detection.ClassID)
-                        # Annonce si la distance est disponible
-                        if distance is not None:
-                            formatted_distance = format_distance_in_meters(distance)
-                            sound.speak(f"{class_name} à {formatted_distance}")
-                            print(f"{class_name} à {formatted_distance}")
-                        else:
-                            # Distance indisponible : annoncer seulement l'objet
-                            sound.speak(f"{class_name}")
-                            print(f"{class_name}")
-                else:
-                    # Aucune détection: annonce limitée à une fois toutes les 3 secondes
-                    now = time.time()
-                    if now - last_no_detection_announce_time > 3.0:
-                        sound.speak("Aucun objet détecté")
-                        print("Aucun objet détecté")
-                        last_no_detection_announce_time = now
+            # ---------------------------------------------------------
+            # 2. COMPORTEMENT SELON LE MODE
+            # ---------------------------------------------------------
+            now = time.time()
+            current_mode = modes[current_mode_index]
 
-            # Mode marche : vérifie la distance et annonce de la distance
-            elif current_mode == "marche":
+            if current_mode == "MARCHE":
+                # --- MODE MARCHE : Ultrasons Uniquement (< 2m) ---
+                
                 distance = ultrasonic_sensor.get_distance()
+                
                 if distance is not None:
-                    formatted_distance = format_distance_in_meters(distance)
-                    # Annonce si la distance se situe dans les plages définies
-                    if 400 <= distance <= 500: # 4 à 5 mètres
-                        sound.speak(f"{formatted_distance}")
-                        print(f"{distance} centimètres")
-                    elif 300 <= distance <= 400:
-                        sound.speak(f"{formatted_distance}")
-                        print(f"{distance} centimètres")
-                    elif 200 <= distance <= 300:
-                        sound.speak(f"{formatted_distance}")
-                        print(f"{distance} centimètres")
-                    elif distance < 200:
-                        sound.speak(f"{formatted_distance}")
-                        print(f"{distance} centimètres")
-                        # Retour haptique pour obstacle proche, avec anti-spam (~0.5s)
-                        now = time.time()
-                        if now - last_vibration_time > 0.5:
-                            vibration_motor.vibrate(0.1)
+                    # Logique demandée : "Obstacle 2m" si < 2m.
+                    if distance < 200: # Distance inférieure à 2 mètres
+                        
+                        # Gestion du délai entre les annonces vocales (toutes les 2.5s)
+                        if now - last_vocal_announce_time > 2.5:
+                            msg = f"Obstacle {format_distance_message(distance)}"
+                            print(f"[MARCHE] {msg}")
+                            sound.speak(msg)
+                            last_vocal_announce_time = now
+                        
+                        # Retour Haptique (Vibration) plus fréquent si obstacle proche
+                        # Vibration courte toutes les 1s max
+                        if now - last_vibration_time > 1.0:
+                            vibration_motor.vibrate(0.15)
                             last_vibration_time = now
                     else:
-                        sound.speak("Rien")
-                        time.sleep(0.25)
-                else:
-                    # Erreur lors de la lecture de la distance (anti-spam)
-                    now = time.time()
-                    if now - last_distance_error_announce_time > 3.0:
-                        sound.speak("Erreur de lecture de distance")
-                        print("Erreur de lecture de distance")
-                        last_distance_error_announce_time = now
+                        # Si distance >= 2m, on ne dit rien (mode exploration "sûr")
+                        # Optionnel : décommenter pour debug
+                        # print(f"[MARCHE] Voie libre ({distance} cm)")
+                        pass
+                
+                time.sleep(0.1) # Petite pause pour ne pas surcharger le CPU
+
+            elif current_mode == "EXPLORATION":
+                # --- MODE EXPLORATION : Caméra Uniquement ---
+                
+                detections = camera.get_detections()
+                
+                # On ne parle que toutes les 3/4 secondes pour ne pas saturer
+                if now - last_vocal_announce_time > 3.0:
+                    if detections:
+                        # On prend l'objet avec la plus grande confiance ou le premier
+                        # Ici on liste tout ce qu'on voit
+                        found_objects = []
+                        for det in detections:
+                            name = camera.get_class_name(det.ClassID)
+                            if name not in found_objects: # Évite de dire "personne, personne"
+                                found_objects.append(name)
+                        
+                        if found_objects:
+                            # Construit la phrase : "Personne, Chaise"
+                            phrase = ", ".join(found_objects)
+                            print(f"[EXPLORATION] Vu : {phrase}")
+                            sound.speak(phrase)
+                            last_vocal_announce_time = now
+                    else:
+                        # Optionnel : dire "Rien" ?
+                        # sound.speak("Rien") 
+                        pass
 
     except KeyboardInterrupt:
-        # Interrompt proprement le programme avec Ctrl + C
-        print("Programme arrêté par l'utilisateur.")
+        print("Arrêt par l'utilisateur.")
+        sound.speak("Arrêt du système")
+    
     finally:
-        # Nettoie les ressources matérielles
+        # Nettoyage propre
+        print("Nettoyage des ressources...")
         button.cleanup()
         vibration_motor.cleanup()
         ultrasonic_sensor.cleanup()
         try:
             camera.cleanup()
-        except Exception:
+        except:
             pass
         try:
             sound.cleanup()
-        except Exception:
+        except:
             pass
-        print("Nettoyage complet")
 
 if __name__ == "__main__":
-    # Point d'entrée principal
     main()
