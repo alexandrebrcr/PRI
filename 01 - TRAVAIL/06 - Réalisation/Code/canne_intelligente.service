@@ -1,14 +1,24 @@
 [Unit]
-Description=Canne Intelligente
-After=network.target nvargus-daemon.service
+Description=Canne Blanche Intelligente - Programme Principal
+After=multi-user.target network.target nvargus-daemon.service sound.target
 
 [Service]
+# Utilisateur qui lance le script (A vérifier sur votre Jetson : souvent 'canneblancheintelligente' ou votre nom)
 User=canneblancheintelligente
-WorkingDirectory=/home/canneblancheintelligente/Documents/PRI_IRFAN
-ExecStartPre=/bin/sh -c 'chmod 666 /dev/ttyTHS1'
-ExecStart=/usr/bin/python3 /home/canneblancheintelligente/Documents/PRI_IRFAN/main.py
-Restart=on-failure
+Group=canneblancheintelligente
+
+# Dossier de travail
+WorkingDirectory=/home/canneblancheintelligente/Documents/PRI_ALEXANDRE
+
+# Commande de lancement (pointe vers le script qu'on vient de modifier)
+ExecStart=/bin/bash /home/canneblancheintelligente/Documents/PRI_ALEXANDRE/startup_script.sh
+
+# Redémarrage automatique en cas de crash
+Restart=always
 RestartSec=5s
+
+# Variables d'environnement si nécessaire
+Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
