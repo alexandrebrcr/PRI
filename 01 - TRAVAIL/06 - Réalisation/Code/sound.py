@@ -52,13 +52,21 @@ class Sound:
 
     def speak(self, text):
         """
-        Enfile un texte pour synthèse vocale sans bloquer la boucle principale.
-        :param text: Le texte à convertir en parole.
+        Enfile un texte pour synthèse vocale.
+        VIDE la file d'attente précédente pour ne dire que le dernier message pertinent.
         """
         try:
+            # On vide la file d'attente pour supprimer les vieux messages non lus
+            while not self._queue.empty():
+                try:
+                    self._queue.get_nowait()
+                    self._queue.task_done()
+                except Empty:
+                    break
+            
+            # On ajoute le nouveau message tout frais
             self._queue.put_nowait(text)
         except Full:
-            # File pleine: on ignore ce message pour éviter la saturation audio.
             pass
 
     def cleanup(self, drain_timeout=2.0):

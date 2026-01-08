@@ -10,6 +10,7 @@ class UltrasonicSensor:
     def __init__(self, port="/dev/ttyTHS1", baudrate=9600, timeout=1):
         self.port = port
         self.baudrate = baudrate
+        self.timeout = timeout  # <--- AJOUT DE CETTE LIGNE MANQUANTE
         self.serial_conn = None
         
         # Variables partagées avec le thread
