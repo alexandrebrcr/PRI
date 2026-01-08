@@ -2,21 +2,29 @@
 # Ce fichier gère la communication avec un capteur ultrason via le port série
 
 import serial 
-import time    
+import time
+import threading
 
 class UltrasonicSensor:
 
     def __init__(self, port="/dev/ttyTHS1", baudrate=9600, timeout=1):
-
         self.port = port
         self.baudrate = baudrate
-        self.timeout = timeout
         self.serial_conn = None
-        # Anti-spam pour logs
+        
+        # Variables partagées avec le thread
+        self._latest_distance = None
+        self._last_read_time = 0.0
+        self._running = True # Pour arrêter le thread proprement
+        
+        # Anti-spam logs
         self._last_log = 0.0
-        self._log_interval = 5.0  # secondes
-        # Tentative d'ouverture initiale
-        self._open_serial()
+        self._log_interval = 5.0
+
+        # Connexion et Lancement du thread
+        if self._open_serial():
+            self._thread = threading.Thread(target=self._read_loop, daemon=True)
+            self._thread.start()
 
     def _log_throttled(self, msg: str):
         """Affiche un message au plus une fois toutes les _log_interval secondes."""
@@ -26,9 +34,7 @@ class UltrasonicSensor:
             self._last_log = now
 
     def _open_serial(self):
-        """Essaie d'ouvrir le port série si fermé, avec gestion des permissions."""
-        if self.serial_conn and getattr(self.serial_conn, "is_open", False):
-            return True
+        """Essaie d'ouvrir le port série."""
         try:
             self.serial_conn = serial.Serial(
                 port=self.port,
@@ -37,58 +43,58 @@ class UltrasonicSensor:
             )
             return True
         except serial.SerialException as e:
-            # Log limité pour éviter le spam
             self._log_throttled(f"Erreur ouverture série ({self.port}) : {e}")
-            self.serial_conn = None
             return False
+
+    def _read_loop(self):
+        """
+        Fonction qui tourne en arrière-plan (Thread) pour lire le capteur en continu.
+        """
+        while self._running:
+            if not self.serial_conn or not self.serial_conn.is_open:
+                time.sleep(1) # Attendre avant de réessayer
+                self._open_serial()
+                continue
+
+            try:
+                # Lecture bloquante de 1 octet pour trouver le Header (synchronisation)
+                # On ne lit que si dispo ou on attend un peu, mais sans bloquer main.py
+                if self.serial_conn.in_waiting > 0:
+                    byte = self.serial_conn.read(1)
+                    if len(byte) == 1 and byte[0] == 0xFF:
+                        # Header trouvé ! On lit les 3 autres octets
+                        data = self.serial_conn.read(3)
+                        if len(data) == 3:
+                            hi, lo, chksum = data[0], data[1], data[2]
+                            checksum = (0xFF + hi + lo) & 0xFF
+                            
+                            if checksum == chksum:
+                                distance_mm = (hi << 8) + lo
+                                if distance_mm > 300: # Filtre bruit < 30cm
+                                     self._latest_distance = distance_mm / 10.0 # cm
+                                     self._last_read_time = time.time()
+                else:
+                    time.sleep(0.01) # Petite pause pour pas manger 100% CPU
+
+            except Exception as e:
+                self._log_throttled(f"Erreur thread ultrason : {e}")
+                time.sleep(0.5)
 
     def get_distance(self):
         """
-        Lit les données du capteur et retourne la distance mesurée.
-        :return: Distance en centimètres ou None en cas d'erreur.
+        Retourne instantanément la dernière distance valide connue.
+        Retourne None si l'info est trop vieille (> 1 seconde).
         """
-        # Vérifie si la connexion série est disponible
-        if not self.serial_conn or not self.serial_conn.is_open:
-            # Tente une réouverture silencieuse
-            if not self._open_serial():
-                return None
-
-        try:
-            # Vider le buffer d'entrée pour éviter l'accumulation
-            self.serial_conn.reset_input_buffer()
-
-            # Lecture des 4 octets du capteur (retourne < 4 si timeout)
-            data = self.serial_conn.read(4)
-            if len(data) != 4:
-                return None
-
-            # Vérification des données reçues
-            hdr, hi, lo, chksum = data[0], data[1], data[2], data[3]
-            if hdr != 0xFF:
-                return None
-
-            checksum = (hdr + hi + lo) & 0xFF
-            if checksum != chksum:
-                # Checksum invalide
-                return None
-
-            distance = (hi << 8) + lo  # en mm si capteur type JSN-SR04T série (ex.)
-            if distance > 30:  # Ignore < 30 (bruit/proximité capteur)
-                return distance / 10  # conversion en cm
-            else:
-                return None
-        except Exception as e:
-            # Gestion des erreurs lors de la lecture des données.
-            self._log_throttled(f"Erreur lecture données ultrason : {e}")
-            return None
+        if time.time() - self._last_read_time < 1.0:
+            return self._latest_distance
+        return None
 
     def cleanup(self):
-        """
-        Ferme proprement la connexion série.
-        """
+        """Arrête le thread et ferme le port."""
+        self._running = False
         if self.serial_conn and self.serial_conn.is_open:
             self.serial_conn.close()
-            print("Connexion série fermée proprement.")
+            print("Capteur Ultrason arrêté.")
 
 # Exemple d'utilisation
 if __name__ == "__main__":
