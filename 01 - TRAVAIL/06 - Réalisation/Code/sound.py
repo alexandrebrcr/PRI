@@ -44,9 +44,20 @@ class Sound:
             text = item
             try:
                 # Exécution synchrone du script pour éviter des lectures audio en parallèle.
+                # On force un appel propre au garbage collector avant le fork pour minimiser l'empreinte RAM
+                import gc
+                gc.collect()
+                
                 subprocess.run([self.script_path, text], check=False)
+            except OSError as e:
+                 # Gestion spécifique de l'erreur "Cannot allocate memory" (Errno 12)
+                 if e.errno == 12:
+                     print("Erreur mémoire lors de la synthèse vocale. Tentative de récupération...")
+                     time.sleep(1) # On attend que de la RAM se libère
+                 else:
+                     print(f"Erreur système synthèse vocale : {e}")
             except Exception as e:
-                print(f"Erreur de la synthèse vocale : {e}")
+                print(f"Erreur inconnue synthèse vocale : {e}")
             finally:
                 self._queue.task_done()
 

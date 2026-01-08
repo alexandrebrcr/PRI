@@ -10,7 +10,7 @@ class UltrasonicSensor:
     def __init__(self, port="/dev/ttyTHS1", baudrate=9600, timeout=1):
         self.port = port
         self.baudrate = baudrate
-        self.timeout = timeout  # <--- AJOUT DE CETTE LIGNE MANQUANTE
+        self.timeout = timeout
         self.serial_conn = None
         
         # Variables partagées avec le thread
@@ -93,6 +93,11 @@ class UltrasonicSensor:
     def cleanup(self):
         """Arrête le thread et ferme le port."""
         self._running = False
+        
+        # On attend un peu que le thread finisse sa boucle
+        if hasattr(self, '_thread') and self._thread.is_alive():
+            self._thread.join(timeout=1.0)
+            
         if self.serial_conn and self.serial_conn.is_open:
             self.serial_conn.close()
             print("Capteur Ultrason arrêté.")
