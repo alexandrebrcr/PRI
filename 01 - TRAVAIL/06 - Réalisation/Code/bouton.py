@@ -16,9 +16,9 @@ class Button:
         :param button_pin: Numéro du GPIO auquel le bouton est connecté (mode BOARD).
         """
         self.button_pin = button_pin
-        self.debounce_time = 0.1  # Temps de rebond (s)
-        self._pressed_flag = False  # Indique qu'un appui a été détecté par interruption
-        self.last_activation_time = 0.0 # Timestamp pour anti-spam global
+        self.debounce_time = 0.1
+        self._pressed_flag = False
+        self.last_activation_time = 0.0
 
         # Configuration du GPIO en mode BOARD (numérotation physique des broches).
         GPIO.setmode(GPIO.BOARD)
@@ -97,13 +97,10 @@ class Button:
             pass
         GPIO.cleanup(self.button_pin)
 
-# ==========================
-# TEST UNITAIRE RAPIDE
-# ==========================
 if __name__ == "__main__":
     try:
         print("--- TEST BOUTON (Mode GND / Active Low) ---")
-        print("Branchez le bouton entre PIN 11 et un GND.")
+        print("Appuyez sur le bouton.")
         button = Button(button_pin=11)
         
         while True:

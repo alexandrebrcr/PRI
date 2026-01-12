@@ -2,17 +2,13 @@ import sys
 from jetson_inference import detectNet
 from jetson_utils import videoSource, videoOutput
 
-# Pour quitter : Ctrl+C dans le terminal ou fermez la fenêtre
-
 def main():
     print("Initialisation de la caméra et de l'affichage...")
     
-    # 1. Modèle de détection (le même que dans votre projet)
-    # Si 'ssd-inception-v2' est trop lourd pour le test, remplacez par 'ssd-mobilenet-v2'
+    # 1. Modèle de détection
     net = detectNet("ssd-inception-v2", threshold=0.5)
 
     # 2. Source vidéo
-    # On teste d'abord SANS la rotation qui fait planter
     camera = videoSource("csi://0", argv=[
         "--input-width=1280", 
         "--input-height=720", 

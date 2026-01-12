@@ -19,7 +19,6 @@ def format_distance_message(distance_cm):
     :param distance_cm: Distance en centimètres.
     :return: Chaîne de caractères à prononcer (ex: "150")
     """
-    #meters = distance_cm / 100
     return f"{distance_cm:.1f}"
 
 def main():
@@ -53,9 +52,6 @@ def main():
     sound = Sound(script_path="./text_to_speech.sh")
 
     # 2. Définition des modes
-    # Mode 0 = Marche (Ultrasons)
-    # Mode 1 = Exploration (Caméra)
-    # Mode 2 = Mixte (Ultrasons + Caméra si obstacle)
     modes = ["MARCHE", "EXPLORATION", "MIXTE"]
     current_mode_index = 0
     
@@ -73,10 +69,10 @@ def main():
         print("\nSignal d'arrêt reçu. Fin de la boucle en cours...")
         
     signal.signal(signal.SIGTERM, signal_handler)
-    # On capture aussi SIGINT (Ctrl+C) de la même façon pour être cohérent
+    # On capture SIGINT (Ctrl+C)
     signal.signal(signal.SIGINT, signal_handler)
 
-    # Variables de suivi temporel pour éviter le spam vocal
+    # Variables de suivi temporel
     last_vocal_announce_time = 0.0
     last_vibration_time = 0.0
     last_mode_change_time = 0.0 
@@ -107,7 +103,7 @@ def main():
             # APPROCHE (50cm - 2m) : Fréquence proportionnelle
             
             vibration_pattern_state = 0
-            ratio = (dist_cm - 50) / 150.0  # 0.0 à 1.0
+            ratio = (dist_cm - 50) / 150.0
             interval = 0.3 + (ratio * 1.2)
             
             if current_time - last_vibration_time > interval:
@@ -177,7 +173,7 @@ def main():
                 # On ne parle que toutes les 2 secondes pour ne pas saturer
                 if now - last_vocal_announce_time > 2:
                     if detections:
-                        # On prend l'objet avec la plus grande confiance ou le premier
+                        # Objet avec la plus grande confiance ou le premier
                         found_objects = []
                         for det in detections:
                             name = camera.get_class_name(det.ClassID)
@@ -188,7 +184,7 @@ def main():
                                 found_objects.append(desc)
                         
                         if found_objects:
-                            # Construit la phrase : "personne devant, chaise à droite"
+                            # Construit la phrase :
                             phrase = ", ".join(found_objects)
                             print(f"[EXPLORATION] Vu : {phrase}")
                             sound.speak(phrase)
@@ -213,7 +209,7 @@ def main():
                             name = camera.get_class_name(det.ClassID)
                             pos = camera.get_object_position(det)
                             
-                            # FILTRE MODE MIXTE : On ne garde que ce qui est DEVANT
+                            # FILTRE MODE MIXTE : On ne garde que ce qui est devant pour distance avec ultrasons cohérente
                             if pos != "devant":
                                 continue
                                 
@@ -245,7 +241,6 @@ def main():
                 
                 else:
                     # Si > 2m, on vide le buffer caméra pour éviter le lag (image fraîche)
-                    # Cela garde le pipeline vidéo actif
                     camera.get_detections() 
                     pass
 

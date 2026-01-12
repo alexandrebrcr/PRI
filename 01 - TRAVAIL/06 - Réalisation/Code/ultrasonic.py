@@ -16,7 +16,7 @@ class UltrasonicSensor:
         # Variables partagées avec le thread
         self._latest_distance = None
         self._last_read_time = 0.0
-        self._running = True # Pour arrêter le thread proprement
+        self._running = True
         
         # Anti-spam logs
         self._last_log = 0.0
@@ -53,17 +53,15 @@ class UltrasonicSensor:
         """
         while self._running:
             if not self.serial_conn or not self.serial_conn.is_open:
-                time.sleep(1) # Attendre avant de réessayer
+                time.sleep(1)
                 self._open_serial()
                 continue
 
             try:
                 # Lecture bloquante de 1 octet pour trouver le Header (synchronisation)
-                # On ne lit que si dispo ou on attend un peu, mais sans bloquer main.py
                 if self.serial_conn.in_waiting > 0:
                     byte = self.serial_conn.read(1)
                     if len(byte) == 1 and byte[0] == 0xFF:
-                        # Header trouvé ! On lit les 3 autres octets
                         data = self.serial_conn.read(3)
                         if len(data) == 3:
                             hi, lo, chksum = data[0], data[1], data[2]
@@ -71,11 +69,11 @@ class UltrasonicSensor:
                             
                             if checksum == chksum:
                                 distance_mm = (hi << 8) + lo
-                                if distance_mm > 300: # Filtre bruit < 30cm
+                                if distance_mm > 150: # Filtre bruit < 15cm
                                      self._latest_distance = distance_mm / 10.0 # cm
                                      self._last_read_time = time.time()
                 else:
-                    time.sleep(0.01) # Petite pause pour pas manger 100% CPU
+                    time.sleep(0.01)
 
             except Exception as e:
                 self._log_throttled(f"Erreur thread ultrason : {e}")
@@ -94,7 +92,6 @@ class UltrasonicSensor:
         """Arrête le thread et ferme le port."""
         self._running = False
         
-        # On attend un peu que le thread finisse sa boucle
         if hasattr(self, '_thread') and self._thread.is_alive():
             self._thread.join(timeout=1.0)
             
@@ -102,7 +99,6 @@ class UltrasonicSensor:
             self.serial_conn.close()
             print("Capteur Ultrason arrêté.")
 
-# Exemple d'utilisation
 if __name__ == "__main__":
     """
     Test du capteur ultrason.
@@ -120,8 +116,6 @@ if __name__ == "__main__":
                 print("Erreur lors de la mesure")
             time.sleep(1)
     except KeyboardInterrupt:
-        # Arrêt propre en cas d'interruption par l'utilisateur (Ctrl + C)
         print("Programme arrêté par l'utilisateur.")
     finally:
-        # Nettoyage des ressources série
         sensor.cleanup()
