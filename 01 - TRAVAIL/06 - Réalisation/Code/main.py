@@ -79,6 +79,7 @@ def main():
     # Variables de suivi temporel pour éviter le spam vocal
     last_vocal_announce_time = 0.0
     last_vibration_time = 0.0
+    last_mode_change_time = 0.0 # Anti-rebond pour le changement de mode
     
     def gerer_vibration_radar(dist_cm, current_time):
         """Gestion progressive de la vibration façon radar de recul"""
@@ -108,6 +109,11 @@ def main():
             # 1. GESTION DU CHANGEMENT DE MODE (PRIORITAIRE)
             # ---------------------------------------------------------
             if button.wait_for_press():
+                # On empêche de changer de mode trop vite (moins de 2s)
+                if time.time() - last_mode_change_time < 2.0:
+                    time.sleep(0.1)
+                    continue
+
                 # On passe au mode suivant
                 current_mode_index = (current_mode_index + 1) % len(modes)
                 current_mode = modes[current_mode_index]
@@ -115,6 +121,8 @@ def main():
                 # Annonce du nouveau mode
                 sound.speak(f"Mode {current_mode}")
                 print(f" changement de mode -> {current_mode}")
+                
+                last_mode_change_time = time.time()
                 
                 # Petite pause pour éviter de changer 2 fois si appui très long
                 time.sleep(0.5)
@@ -193,6 +201,12 @@ def main():
                         for det in detections:
                             name = camera.get_class_name(det.ClassID)
                             pos = camera.get_object_position(det)
+                            
+                            # FILTRE MODE MIXTE : On ne garde que ce qui est DEVANT
+                            # car les ultrasons ne voient que devant.
+                            if pos != "devant":
+                                continue
+                                
                             desc = f"{name} {pos}"
                             
                             if desc not in found_objects:
@@ -203,8 +217,11 @@ def main():
                         if found_objects:
                             # C'est un objet connu
                             phrase = ", ".join(found_objects)
-                            print(f"[MIXTE] Vu : {phrase} ({distance} cm)")
-                            sound.speak(phrase)
+                            # On ajoute la distance à la phrase: "Chaise devant, 150"
+                            full_msg = f"{phrase}, {format_distance_message(distance)}"
+                            
+                            print(f"[MIXTE] Vu : {full_msg}")
+                            sound.speak(full_msg)
                         else:
                             # Pas d'objet connu -> "Obstacle 150"
                             msg = f"Obstacle {format_distance_message(distance)}"
