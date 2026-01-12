@@ -79,28 +79,39 @@ def main():
     # Variables de suivi temporel pour éviter le spam vocal
     last_vocal_announce_time = 0.0
     last_vibration_time = 0.0
-    last_mode_change_time = 0.0 # Anti-rebond pour le changement de mode
+    last_mode_change_time = 0.0 
+    vibration_pattern_state = 0 # 0=Long, 1=Court
     
     def gerer_vibration_radar(dist_cm, current_time):
         """Gestion progressive de la vibration façon radar de recul"""
-        nonlocal last_vibration_time
+        nonlocal last_vibration_time, vibration_pattern_state
         
         if dist_cm < 50:
-            # DANGER IMMÉDIAT (< 50cm) : Vibration quasi-continue (intense)
-            # On vibre 0.15s avec une pause minuscule
-            if current_time - last_vibration_time > 0.2:
-                vibration_motor.vibrate(0.15)
-                last_vibration_time = current_time
+            # DANGER IMMÉDIAT (< 50cm) : Pattern rapide
+            
+            if vibration_pattern_state == 0:
+                # Etape 0 : Vibration Longue
+                if current_time - last_vibration_time > 0.2:
+                    vibration_motor.vibrate(0.35)
+                    last_vibration_time = current_time
+                    vibration_pattern_state = 1
+                    
+            else:
+                # Etape 1 : Vibration Courte
+                if current_time - last_vibration_time > 0.45:
+                    vibration_motor.vibrate(0.10)
+                    last_vibration_time = current_time
+                    vibration_pattern_state = 0
                 
         elif dist_cm < 200:
             # APPROCHE (50cm - 2m) : Fréquence proportionnelle
-            # 50cm -> délai court (0.3s)
-            # 200cm -> délai long (1.5s)
+            
+            vibration_pattern_state = 0
             ratio = (dist_cm - 50) / 150.0  # 0.0 à 1.0
             interval = 0.3 + (ratio * 1.2)
             
             if current_time - last_vibration_time > interval:
-                vibration_motor.vibrate(0.1) # Vibration courte (blip)
+                vibration_motor.vibrate(0.1)
                 last_vibration_time = current_time
 
     try:
@@ -126,7 +137,7 @@ def main():
                 
                 # Petite pause pour éviter de changer 2 fois si appui très long
                 time.sleep(0.5)
-                continue # On redémarre la boucle proprement dans le nouveau mode
+                continue
 
             # ---------------------------------------------------------
             # 2. COMPORTEMENT SELON LE MODE
