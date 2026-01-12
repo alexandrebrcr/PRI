@@ -59,7 +59,7 @@ def main():
     modes = ["MARCHE", "EXPLORATION", "MIXTE"]
     current_mode_index = 0
     
-    sound.speak("Système démarré. Mode Marche.")
+    sound.speak("Système démarré. Mode Marche.", priority=True)
     print("Système démarré. Mode Marche.")
 
     # Variable de contrôle de la boucle principale
@@ -118,8 +118,8 @@ def main():
                 current_mode_index = (current_mode_index + 1) % len(modes)
                 current_mode = modes[current_mode_index]
                 
-                # Annonce du nouveau mode
-                sound.speak(f"Mode {current_mode}")
+                # Annonce du nouveau mode (PRIORITAIRE)
+                sound.speak(f"Mode {current_mode}", priority=True)
                 print(f" changement de mode -> {current_mode}")
                 
                 last_mode_change_time = time.time()
@@ -246,7 +246,9 @@ def main():
     finally:
         # Nettoyage propre
         print("Nettoyage des ressources...")
-        sound.speak("Arrêt du système")
+        sound.speak("Arrêt du système", priority=True)
+        # On laisse un peu de temps à la voix de finir
+        time.sleep(2.0) 
         
         # On nettoie d'abord les périphériques robustes
         try:

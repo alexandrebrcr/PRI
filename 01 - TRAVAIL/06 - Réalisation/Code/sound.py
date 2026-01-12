@@ -26,71 +26,80 @@ class Sound:
             except Exception as e:
                 print(f"Attention: Impossible de changer les permissions du script son ({e})")
 
-        self._queue = Queue(maxsize=queue_size)
+        self._queue_normal = Queue(maxsize=queue_size)
+        self._queue_priority = Queue(maxsize=queue_size)
         self._stop = False
         self._worker = threading.Thread(target=self._run_worker, daemon=True)
         self._worker.start()
 
     def _run_worker(self):
-        """Boucle du worker qui consomme les messages TTS de manière séquentielle."""
+        """Boucle du worker qui consomme les messages TTS."""
         while not self._stop:
-            try:
-                item = self._queue.get(timeout=0.25)
-            except Empty:
+            text = None
+            
+            # 1. On vérifie d'abord la file PRIORITAIRE (non-bloquant)
+            if not self._queue_priority.empty():
+                try:
+                    text = self._queue_priority.get_nowait()
+                    self._queue_priority.task_done()
+                except Empty:
+                    pass
+            
+            # 2. Si rien en prioritaire, on regarde la file NORMALE (ou blocage court)
+            if text is None:
+                try:
+                    # Timeout court pour vérifier régulièrement si un message prioritaire arrive
+                    text = self._queue_normal.get(timeout=0.1)
+                    self._queue_normal.task_done()
+                except Empty:
+                    continue
+            
+            # 3. Traitement du message (Identique)
+            if text is None:
                 continue
-            if item is None:
-                # Sentinel pour arrêter le worker
-                break
-            text = item
+
             try:
-                # Exécution synchrone du script pour éviter des lectures audio en parallèle.
-                # On force un appel propre au garbage collector avant le fork pour minimiser l'empreinte RAM
+                # Exécution synchrone du script
                 import gc
                 gc.collect()
-                
                 subprocess.run([self.script_path, text], check=False)
             except OSError as e:
-                 # Gestion spécifique de l'erreur "Cannot allocate memory" (Errno 12)
                  if e.errno == 12:
-                     print("Erreur mémoire lors de la synthèse vocale. Tentative de récupération...")
-                     time.sleep(1) # On attend que de la RAM se libère
-                 else:
-                     print(f"Erreur système synthèse vocale : {e}")
+                     print("Erreur mémoire TTS (récupération...)")
+                     time.sleep(1)
             except Exception as e:
-                print(f"Erreur inconnue synthèse vocale : {e}")
-            finally:
-                self._queue.task_done()
+                print(f"Erreur TTS : {e}")
 
-    def speak(self, text):
+    def speak(self, text, priority=False):
         """
         Enfile un texte pour synthèse vocale.
-        VIDE la file d'attente précédente pour ne dire que le dernier message pertinent.
+        :param priority: Si True, le message est mis dans une file prioritaire et ne peut pas être écrasé.
+                         Si False, le message écrase les précédents messages normaux en attente.
         """
-        try:
-            # On vide la file d'attente pour supprimer les vieux messages non lus
-            while not self._queue.empty():
-                try:
-                    self._queue.get_nowait()
-                    self._queue.task_done()
-                except Empty:
-                    break
-            
-            # On ajoute le nouveau message tout frais
-            self._queue.put_nowait(text)
-        except Full:
-            pass
+        if priority:
+            # Message important (Mode, Alerte système) : On l'ajoute à la file prioritaire
+            # On ne vide PAS la file prioritaire, on empile les messages importants
+            try:
+                self._queue_priority.put_nowait(text)
+            except Full:
+                pass
+        else:
+            # Message 'spam' (Distance, Objet) : On vide la file NORMALE pour ne garder que le frais
+            try:
+                while not self._queue_normal.empty():
+                    try:
+                        self._queue_normal.get_nowait()
+                        self._queue_normal.task_done()
+                    except Empty:
+                        break
+                
+                self._queue_normal.put_nowait(text)
+            except Full:
+                pass
 
     def cleanup(self, drain_timeout=2.0):
-        """Arrête proprement le worker TTS et vide la file autant que possible."""
-        # Optionnel: attendre un court instant que la file se vide
-        end_time = time.time() + drain_timeout
-        while not self._queue.empty() and time.time() < end_time:
-            time.sleep(0.05)
+        """Arrête proprement le worker TTS."""
         self._stop = True
-        try:
-            self._queue.put_nowait(None)  # Sentinel
-        except Full:
-            pass
         if self._worker.is_alive():
             self._worker.join(timeout=2.0)
 
