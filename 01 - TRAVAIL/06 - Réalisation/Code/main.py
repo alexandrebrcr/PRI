@@ -55,7 +55,8 @@ def main():
     # 2. Définition des modes
     # Mode 0 = Marche (Ultrasons)
     # Mode 1 = Exploration (Caméra)
-    modes = ["MARCHE", "EXPLORATION"]
+    # Mode 2 = Mixte (Ultrasons + Caméra si obstacle)
+    modes = ["MARCHE", "EXPLORATION", "MIXTE"]
     current_mode_index = 0
     
     sound.speak("Système démarré. Mode Marche.")
@@ -79,6 +80,28 @@ def main():
     last_vocal_announce_time = 0.0
     last_vibration_time = 0.0
     
+    def gerer_vibration_radar(dist_cm, current_time):
+        """Gestion progressive de la vibration façon radar de recul"""
+        nonlocal last_vibration_time
+        
+        if dist_cm < 50:
+            # DANGER IMMÉDIAT (< 50cm) : Vibration quasi-continue (intense)
+            # On vibre 0.15s avec une pause minuscule
+            if current_time - last_vibration_time > 0.2:
+                vibration_motor.vibrate(0.15)
+                last_vibration_time = current_time
+                
+        elif dist_cm < 200:
+            # APPROCHE (50cm - 2m) : Fréquence proportionnelle
+            # 50cm -> délai court (0.3s)
+            # 200cm -> délai long (1.5s)
+            ratio = (dist_cm - 50) / 150.0  # 0.0 à 1.0
+            interval = 0.3 + (ratio * 1.2)
+            
+            if current_time - last_vibration_time > interval:
+                vibration_motor.vibrate(0.1) # Vibration courte (blip)
+                last_vibration_time = current_time
+
     try:
         while running:
             # ---------------------------------------------------------
@@ -112,22 +135,17 @@ def main():
                     # Logique demandée : "Obstacle 2m" si < 2m.
                     if distance < 200: # Distance inférieure à 2 mètres
                         
-                        # Gestion du délai entre les annonces vocales (toutes les 2.5s)
-                        if now - last_vocal_announce_time > 2.5:
+                        # Gestion du délai entre les annonces vocales (toutes les 2)
+                        if now - last_vocal_announce_time > 2:
                             msg = f"Obstacle {format_distance_message(distance)}"
                             print(f"[MARCHE] {msg}")
                             sound.speak(msg)
                             last_vocal_announce_time = now
                         
-                        # Retour Haptique (Vibration) plus fréquent si obstacle proche
-                        # Vibration courte toutes les 1s max
-                        if now - last_vibration_time > 1.0:
-                            vibration_motor.vibrate(0.15)
-                            last_vibration_time = now
+                        # Retour Haptique Proportionnel
+                        gerer_vibration_radar(distance, now)
+
                     else:
-                        # Si distance >= 2m, on ne dit rien (mode exploration "sûr")
-                        # Optionnel : décommenter pour debug
-                        # print(f"[MARCHE] Voie libre ({distance} cm)")
                         pass
                 
                 time.sleep(0.1) # Petite pause pour ne pas surcharger le CPU
@@ -137,33 +155,82 @@ def main():
                 
                 detections = camera.get_detections()
                 
-                # On ne parle que toutes les 3/4 secondes pour ne pas saturer
-                if now - last_vocal_announce_time > 3.0:
+                # On ne parle que toutes les 2 secondes pour ne pas saturer
+                if now - last_vocal_announce_time > 2:
                     if detections:
                         # On prend l'objet avec la plus grande confiance ou le premier
                         found_objects = []
                         for det in detections:
                             name = camera.get_class_name(det.ClassID)
-                            if name not in found_objects: # Évite de dire "personne, personne"
-                                found_objects.append(name)
+                            pos = camera.get_object_position(det)
+                            desc = f"{name} {pos}"
+                            
+                            if desc not in found_objects: 
+                                found_objects.append(desc)
                         
                         if found_objects:
-                            # Construit la phrase : "Personne, Chaise"
+                            # Construit la phrase : "personne devant, chaise à droite"
                             phrase = ", ".join(found_objects)
                             print(f"[EXPLORATION] Vu : {phrase}")
                             sound.speak(phrase)
                             last_vocal_announce_time = now
                     else:
-                        # sound.speak("Rien") 
                         pass
+
+            elif current_mode == "MIXTE":
+                # --- MODE MIXTE : Ultrasons + Caméra si obstacle proche ---
+                
+                distance = ultrasonic_sensor.get_distance()
+                
+                if distance is not None and distance < 200:
+                    # Obstacle à moins de 2m -> On regarde ce que c'est
+                    
+                    # On active la détection caméra
+                    detections = camera.get_detections()
+                    
+                    found_objects = []
+                    if detections:
+                        for det in detections:
+                            name = camera.get_class_name(det.ClassID)
+                            pos = camera.get_object_position(det)
+                            desc = f"{name} {pos}"
+                            
+                            if desc not in found_objects:
+                                found_objects.append(desc)
+                    
+                    # Gestion vocale
+                    if now - last_vocal_announce_time > 2:
+                        if found_objects:
+                            # C'est un objet connu
+                            phrase = ", ".join(found_objects)
+                            print(f"[MIXTE] Vu : {phrase} ({distance} cm)")
+                            sound.speak(phrase)
+                        else:
+                            # Pas d'objet connu -> "Obstacle 150"
+                            msg = f"Obstacle {format_distance_message(distance)}"
+                            print(f"[MIXTE] {msg}")
+                            sound.speak(msg)
+                        
+                        last_vocal_announce_time = now
+                    
+                    # Vibration (Sécurité toujours active en mixte)
+                    gerer_vibration_radar(distance, now)
+                
+                else:
+                    # Si > 2m, on vide le buffer caméra pour éviter le lag (image fraîche)
+                    # Cela garde le pipeline vidéo actif
+                    camera.get_detections() 
+                    pass
+
+                time.sleep(0.1)
 
     except KeyboardInterrupt:
         print("Arrêt par l'utilisateur.")
-        sound.speak("Arrêt du système")
     
     finally:
         # Nettoyage propre
         print("Nettoyage des ressources...")
+        sound.speak("Arrêt du système")
         
         # On nettoie d'abord les périphériques robustes
         try:

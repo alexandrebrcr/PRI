@@ -59,6 +59,23 @@ class Camera:
         # On retourne la traduction si elle existe, sinon le nom anglais original
         return self.translations.get(english_name.lower(), english_name)
 
+    def get_object_position(self, detection):
+        """
+        Détermine la position horizontale de l'objet dans l'image (1280px de large).
+        :param detection: Objet detection renvoyé par jetson_inference
+        :return: "à gauche", "à droite" ou "devant"
+        """
+        center_x = detection.Center[0]
+        width = 1280 # Largeur définie dans le constructeur
+        
+        # On découpe l'image en 3 tiers
+        if center_x < (width / 3):
+            return "à gauche"
+        elif center_x > (width * 2 / 3):
+            return "à droite"
+        else:
+            return "devant"
+
     def cleanup(self):
         """
         Libère les ressources utilisées par la caméra.
