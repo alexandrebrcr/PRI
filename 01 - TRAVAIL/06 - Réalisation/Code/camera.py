@@ -19,7 +19,7 @@ class Camera:
         self.net = detectNet(model, threshold=threshold, argv=argv)
         
         # Ajout de --input-flip=rotate-180 pour corriger la caméra à l'envers
-        self.camera = videoSource("csi://0", argv=argv + ["--input-width=1280", "--input-height=720", "--input-rate=30", "--input-flip=rotate-180"])
+        self.camera = videoSource("csi://0", argv=argv + ["--input-width=1280", "--input-height=720", "--input-rate=30"])
 
         # Dictionnaire de traduction Anglais -> Français pour le dataset COCO (91 classes)
         self.translations = {
