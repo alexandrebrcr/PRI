@@ -1,8 +1,9 @@
 # main.py
-# Programme principal de la Canne Blanche Intelligente
-# Gère deux modes : 
+# Programme principal de la Canne Blanche
+# Gère 3 modes : 
 # 1. Marche : Détection d'obstacles par ultrasons (< 2m)
-# 2. Exploration : Reconnaissance d'objets par caméra
+# 2. Exploration : Reconnaissance de tous les vus objets par caméra
+# 3. Mixte : Ultrasons + Caméra (< 2m) uniquement en face de l'utilisateur
 
 import time
 import signal
