@@ -61,18 +61,26 @@ def main():
     sound.speak("Système démarré. Mode Marche.")
     print("Système démarré. Mode Marche.")
 
+    # Variable de contrôle de la boucle principale
+    running = True
+
     # Gestion propre de l'arrêt via systemctl (SIGTERM)
     def signal_handler(signum, frame):
-        # On lève une exception KeyboardInterrupt pour déclencher le bloc 'finally'
-        raise KeyboardInterrupt
+        # On passe simplement la variable à False pour finir la boucle proprement
+        nonlocal running
+        running = False
+        print("\nSignal d'arrêt reçu. Fin de la boucle en cours...")
+        
     signal.signal(signal.SIGTERM, signal_handler)
+    # On capture aussi SIGINT (Ctrl+C) de la même façon pour être cohérent
+    signal.signal(signal.SIGINT, signal_handler)
 
     # Variables de suivi temporel pour éviter le spam vocal
     last_vocal_announce_time = 0.0
     last_vibration_time = 0.0
     
     try:
-        while True:
+        while running:
             # ---------------------------------------------------------
             # 1. GESTION DU CHANGEMENT DE MODE (PRIORITAIRE)
             # ---------------------------------------------------------
