@@ -5,6 +5,8 @@
 # 2. Exploration : Reconnaissance d'objets par caméra
 
 import time
+import signal
+import sys
 from bouton import Button
 from vibration import Vibration
 from camera import Camera
@@ -58,6 +60,12 @@ def main():
     
     sound.speak("Système démarré. Mode Marche.")
     print("Système démarré. Mode Marche.")
+
+    # Gestion propre de l'arrêt via systemctl (SIGTERM)
+    def signal_handler(signum, frame):
+        # On lève une exception KeyboardInterrupt pour déclencher le bloc 'finally'
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, signal_handler)
 
     # Variables de suivi temporel pour éviter le spam vocal
     last_vocal_announce_time = 0.0

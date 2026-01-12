@@ -18,18 +18,26 @@ class Vibration:
 
     def vibrate(self, duration):
         """
-        Active le vibreur pour une durée donnée
+        Active le vibreur pour une durée donnée avec sécurité d'arrêt.
         :param duration: Durée donnée en seconde
         """
-        print(f"Vibration activée pendant {duration} seconde(s).")
-        GPIO.output(self.vibration_pin, GPIO.HIGH)  # Active le vibreur
-        time.sleep(duration)  # Maintient le vibreur activé pendant la durée donnée
-        GPIO.output(self.vibration_pin, GPIO.LOW)  # Désactive le vibreur
+        # print(f"Vibration activée pendant {duration} seconde(s).")
+        try:
+            GPIO.output(self.vibration_pin, GPIO.HIGH)  # Active le vibreur
+            time.sleep(duration)  # Maintient le vibreur activé pendant la durée donnée
+        finally:
+            # Ce code s'exécute MÊME si le programme est tué pendant le sleep
+            GPIO.output(self.vibration_pin, GPIO.LOW)  # Désactive le vibreur
 
     def cleanup(self):
         """
         Libère les ressources GPIO après utilisation.
         """
+        # Force l'arrêt physique avant de libérer le GPIO
+        try:
+            GPIO.output(self.vibration_pin, GPIO.LOW)
+        except Exception:
+            pass
         GPIO.cleanup(self.vibration_pin)
         print("GPIO du vibreur nettoyé")
 
