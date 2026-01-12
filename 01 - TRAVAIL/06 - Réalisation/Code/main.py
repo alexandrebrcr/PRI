@@ -203,11 +203,10 @@ def main():
                             pos = camera.get_object_position(det)
                             
                             # FILTRE MODE MIXTE : On ne garde que ce qui est DEVANT
-                            # car les ultrasons ne voient que devant.
                             if pos != "devant":
                                 continue
                                 
-                            desc = f"{name} {pos}"
+                            desc = f"{name}"
                             
                             if desc not in found_objects:
                                 found_objects.append(desc)

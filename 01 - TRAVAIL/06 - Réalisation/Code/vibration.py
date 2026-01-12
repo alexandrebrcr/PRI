@@ -14,7 +14,6 @@ class Vibration:
         self.vibration_pin = vibration_pin  
         GPIO.setmode(GPIO.BOARD)  # Configuration des broches en mode BOARD (numérotation physique)
         GPIO.setup(self.vibration_pin, GPIO.OUT, initial=GPIO.LOW)  # Configure la broche en sortie, initialisée à LOW
-        print(f"Vibreur configuré sur le pin {self.vibration_pin}")
 
     def vibrate(self, duration):
         """
