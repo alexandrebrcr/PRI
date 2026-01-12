@@ -141,7 +141,6 @@ def main():
                 if now - last_vocal_announce_time > 3.0:
                     if detections:
                         # On prend l'objet avec la plus grande confiance ou le premier
-                        # Ici on liste tout ce qu'on voit
                         found_objects = []
                         for det in detections:
                             name = camera.get_class_name(det.ClassID)
@@ -155,7 +154,6 @@ def main():
                             sound.speak(phrase)
                             last_vocal_announce_time = now
                     else:
-                        # Optionnel : dire "Rien" ?
                         # sound.speak("Rien") 
                         pass
 
@@ -166,17 +164,33 @@ def main():
     finally:
         # Nettoyage propre
         print("Nettoyage des ressources...")
-        button.cleanup()
-        vibration_motor.cleanup()
-        ultrasonic_sensor.cleanup()
+        
+        # On nettoie d'abord les périphériques robustes
         try:
-            camera.cleanup()
-        except:
-            pass
+            button.cleanup()
+        except: pass
+            
+        try:
+            vibration_motor.cleanup()
+        except: pass
+            
+        try:
+            ultrasonic_sensor.cleanup()
+        except: pass
+        
         try:
             sound.cleanup()
+        except: pass
+
+        # On garde la caméra pour la fin car elle risque de SegFault
+        try:
+            if 'camera' in locals():
+                print("Arrêt de la caméra...")
+                camera.cleanup()
+        except Exception as e:
+            print(f"Erreur fermeture caméra (ignorée): {e}")
         except:
-            pass
+            print("Crash critique fermeture caméra (ignoré)")
 
 if __name__ == "__main__":
     main()
