@@ -46,7 +46,7 @@ def main():
     # Capteur Ultrason sur le port série
     ultrasonic_sensor = UltrasonicSensor(port="/dev/ttyTHS1", baudrate=9600)
     
-    # Caméra AI - Changement pour Inception V2 (plus précis)
+    # Caméra AI - Modèle Inception V2
     camera = Camera(model="ssd-inception-v2")
     
     # Module Son
