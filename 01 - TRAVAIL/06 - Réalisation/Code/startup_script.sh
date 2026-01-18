@@ -3,7 +3,7 @@
 # Annonce immédiate du démarrage (le plus tôt possible)
 # Carte son 2 (USB)
 if [ -x "$(command -v pico2wave)" ]; then
-    pico2wave -w /dev/shm/sys_boot.wav -l fr-FR "Démarrage du système"
+    pico2wave -w /dev/shm/sys_boot.wav -l fr-FR "Démarrage du système. Trois modes sont disponnibles, marche, exploration et mixte. Veuillez presser le bouton pour passer d'un mode à l'autre. Les distances sont exprimées en centimètres"
     aplay -D plughw:2,0 /dev/shm/sys_boot.wav 2>/dev/null
     rm -f /dev/shm/sys_boot.wav
 fi

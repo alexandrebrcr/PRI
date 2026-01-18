@@ -2,7 +2,7 @@
 
 SOUND_CARD_IDX=2
 # Réglages de la voix
-SPEED="1.8"    # 1.0 = Normal
+SPEED="1.6"    # 1.0 = Normal
 PITCH="-200"   # 0 = Normal
 
 # Vérifier si pico2wave est installé

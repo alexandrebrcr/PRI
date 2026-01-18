@@ -187,7 +187,7 @@ def main():
                         if found_objects:
                             # Construit la phrase :
                             phrase = ", ".join(found_objects)
-                            print(f"[EXPLORATION] Vu : {phrase}")
+                            print(f"[EXPLORATION] {phrase}")
                             sound.speak(phrase)
                             last_vocal_announce_time = now
                     else:
@@ -227,7 +227,7 @@ def main():
                             # On ajoute la distance à la phrase: "Chaise devant 150"
                             full_msg = f"{phrase} {format_distance_message(distance)}"
                             
-                            print(f"[MIXTE] Vu : {full_msg}")
+                            print(f"[MIXTE] {full_msg}")
                             sound.speak(full_msg)
                         else:
                             # Pas d'objet connu -> "150"
