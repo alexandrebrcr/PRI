@@ -52,6 +52,9 @@ def main():
     # Module Son
     sound = Sound(script_path="./text_to_speech.sh")
 
+    # On attend un peu que le système audio soit vraiment prêt (post-boot)
+    time.sleep(2)
+
     # 2. Définition des modes
     modes = ["MARCHE", "EXPLORATION", "MIXTE"]
     current_mode_index = 0
