@@ -3,19 +3,22 @@ Description=Canne Blanche Intelligente - Programme Principal
 After=multi-user.target network.target nvargus-daemon.service sound.target
 
 [Service]
-# Utilisateur qui lance le script (A vérifier sur votre Jetson : souvent 'canneblancheintelligente' ou votre nom)
+# Utilisateur qui lance le script
 User=canneblancheintelligente
 Group=canneblancheintelligente
 
 # Dossier de travail
-WorkingDirectory=/home/canneblancheintelligente/Documents/PRI_ALEXANDRE
+WorkingDirectory=/home/canneblancheintelligente/Documents/PRI_ALEXANDRE/PRI/01 - TRAVAIL/06 - Réalisation/Code
 
-# Commande de lancement (pointe vers le script qu'on vient de modifier)
-ExecStart=/bin/bash /home/canneblancheintelligente/Documents/PRI_ALEXANDRE/startup_script.sh
+# On attend 15 secondes que le système de fichiers soit OK
+ExecStartPre=/bin/sleep 15
 
-# Redémarrage automatique en cas de crash
-Restart=always
-RestartSec=5s
+# Commande de lancement
+ExecStart=/bin/bash "./startup_script.sh"
+
+# Redémarrage automatique en cas de crash (avec délai plus long pour éviter la boucle infernale)
+Restart=on-failure
+RestartSec=30s
 
 # Variables d'environnement si nécessaire
 Environment=PYTHONUNBUFFERED=1

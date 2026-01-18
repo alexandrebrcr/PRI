@@ -2,7 +2,13 @@
 
 # === SCRIPT DE DEMARRAGE ===
 
-# 3. Configuration du projet
+# Audio ALSA pour éviter le crash PulseAudio
+export AUDIODRIVER=alsa
+export ALSA_CARD=Device
+# On empêche PulseAudio de démarrer tout seul
+export PULSE_SERVER=
+
+# Configuration du projet
 PROJECT_DIR="/home/canneblancheintelligente/Documents/PRI_ALEXANDRE/PRI/01 - TRAVAIL/06 - Réalisation/Code"
 
 # Permissions port série (Ultrasons)
@@ -15,5 +21,5 @@ cd "$PROJECT_DIR" || exit 1
 # Droits d'exécution
 chmod +x text_to_speech.sh
 
-# 4. Lancement du programme PRINCIPAL
+# Lancement du programme PRINCIPAL
 python3 -u main.py > logs_canne.txt 2>&1

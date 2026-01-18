@@ -60,6 +60,7 @@ def main():
     current_mode_index = 0
     
     sound.speak("Système démarré. Mode Marche.", priority=True)
+    sound.speak("Trois modes sont disponibles, marche, exploration et mixte. Veuillez presser le bouton pour passer d'un mode à l'autre. Les distances sont exprimées en centimètres", priority=True)
     print("Système démarré. Mode Marche.")
 
     # Variable de contrôle de la boucle principale
