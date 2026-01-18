@@ -20,7 +20,7 @@ def format_distance_message(distance_cm):
     :param distance_cm: Distance en centimètres.
     :return: Chaîne de caractères à prononcer (ex: "150")
     """
-    return f"{distance_cm:.1f}"
+    return f"{int(round(distance_cm))}"
 
 def main():
     """
@@ -151,9 +151,9 @@ def main():
                     # Logique demandée : "Obstacle 2m" si < 2m.
                     if distance < 200: # Distance inférieure à 2 mètres
                         
-                        # Gestion du délai entre les annonces vocales (toutes les 2)
-                        if now - last_vocal_announce_time > 2:
-                            msg = f"Obstacle {format_distance_message(distance)}"
+                        # Gestion du délai entre les annonces vocales (toutes les 1s)
+                        if now - last_vocal_announce_time > 1:
+                            msg = format_distance_message(distance)
                             print(f"[MARCHE] {msg}")
                             sound.speak(msg)
                             last_vocal_announce_time = now
@@ -220,18 +220,18 @@ def main():
                                 found_objects.append(desc)
                     
                     # Gestion vocale
-                    if now - last_vocal_announce_time > 2:
+                    if now - last_vocal_announce_time > 1:
                         if found_objects:
                             # C'est un objet connu
                             phrase = ", ".join(found_objects)
-                            # On ajoute la distance à la phrase: "Chaise devant, 150"
-                            full_msg = f"{phrase}, {format_distance_message(distance)}"
+                            # On ajoute la distance à la phrase: "Chaise devant 150"
+                            full_msg = f"{phrase} {format_distance_message(distance)}"
                             
                             print(f"[MIXTE] Vu : {full_msg}")
                             sound.speak(full_msg)
                         else:
-                            # Pas d'objet connu -> "Obstacle 150"
-                            msg = f"Obstacle {format_distance_message(distance)}"
+                            # Pas d'objet connu -> "150"
+                            msg = format_distance_message(distance)
                             print(f"[MIXTE] {msg}")
                             sound.speak(msg)
                         
