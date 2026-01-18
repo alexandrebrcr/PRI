@@ -1,28 +1,34 @@
 #!/bin/bash
 
-# Annonce immédiate du démarrage (le plus tôt possible)
-# Carte son 2 (USB)
+# === SCRIPT DE DEMARRAGE ===
+
+# 1. Attente active de la carte son (Max 15s)
+count=0
+while ! grep -q "usb" /proc/asound/modules && [ $count -lt 15 ]; do
+  sleep 1
+  count=$((count+1))
+done
+sleep 2 # Petite pause sécurité pour PulseAudio/ALSA
+
+# 2. Annonce vocale de démarrage
 if [ -x "$(command -v pico2wave)" ]; then
-    pico2wave -w /dev/shm/sys_boot.wav -l fr-FR "Démarrage du système. Trois modes sont disponnibles, marche, exploration et mixte. Veuillez presser le bouton pour passer d'un mode à l'autre. Les distances sont exprimées en centimètres"
-    aplay -D plughw:2,0 /dev/shm/sys_boot.wav 2>/dev/null
+    pico2wave -w /dev/shm/sys_boot.wav -l fr-FR "Démarrage système. Initialisation en cours."
+    timeout 5s aplay -D plughw:2,0 /dev/shm/sys_boot.wav >/dev/null 2>&1
     rm -f /dev/shm/sys_boot.wav
 fi
 
-# Définition du dossier du projet
+# 3. Configuration du projet
 PROJECT_DIR="/home/canneblancheintelligente/Documents/PRI_ALEXANDRE/PRI/01 - TRAVAIL/06 - Réalisation/Code"
 
-sleep 3
-
-# Donne les permissions nécessaires au port série (Ultrasons)
+# Permissions port série (Ultrasons)
 if [ -e /dev/ttyTHS1 ]; then
     sudo chmod 666 /dev/ttyTHS1
 fi
 
-# Donne les droits d'exécution au script de parole
-chmod +x "$PROJECT_DIR/text_to_speech.sh"
-
-# Se place dans le dossier
 cd "$PROJECT_DIR" || exit 1
 
-# Lance le programme principal avec Python 3
-python main.py > logs_canne.txt 2>&1
+# Droits d'exécution
+chmod +x text_to_speech.sh
+
+# 4. Lancement du programme PRINCIPAL
+python3 -u main.py > logs_canne.txt 2>&1
