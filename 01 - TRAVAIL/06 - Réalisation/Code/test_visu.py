@@ -6,7 +6,7 @@ def main():
     print("Initialisation de la caméra et de l'affichage...")
     
     # 1. Modèle de détection
-    net = detectNet("ssd-inception-v2", threshold=0.5)
+    net = detectNet("ssd-inception-v2", threshold=0.5) #mobilenet
 
     # 2. Source vidéo
     camera = videoSource("csi://0", argv=[

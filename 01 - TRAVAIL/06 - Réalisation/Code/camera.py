@@ -8,7 +8,7 @@ from jetson_utils import videoSource
 
 class Camera:
 
-    def __init__(self, model="ssd-mobilenet-v2", threshold=0.5):
+    def __init__(self, model="ssd-inception-v2", threshold=0.5): #mobilenet
         """
         Initialise la caméra et le modèle de détection.
         :param model: Modèle utilisé pour détecter les objets (par défaut : "ssd-mobilenet-v2").

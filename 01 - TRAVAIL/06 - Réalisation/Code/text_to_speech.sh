@@ -1,25 +1,29 @@
 #!/bin/bash
 
 SOUND_CARD_IDX=2
+# Réglages de la voix
+SPEED="1.8"    # 1.0 = Normal
+PITCH="-200"   # 0 = Normal
 
 # Vérifier si pico2wave est installé
 if [ -x "$(command -v pico2wave)" ]; then
-    # Création d'un fichier temporaire UNIQUE pour éviter les conflits au démarrage
-=    TEMP_WAV="/dev/shm/tts_output_$$.$RANDOM.wav"
+    # Fichiers temporaires
+    RAW_WAV="/dev/shm/tts_raw_$$.wav"
+    FINAL_WAV="/dev/shm/tts_final_$$.wav"
     
-    # 1. Génération du fichier audio
-    pico2wave -w "$TEMP_WAV" -l fr-FR "$@"
+    # 1. Génération du fichier brut avec Pico
+    pico2wave -w "$RAW_WAV" -l fr-FR "$@"
     
-    # 2. Lecture du fichier
-    aplay -D plughw:$SOUND_CARD_IDX,0 "$TEMP_WAV" 2>/dev/null
+    # 2. Traitement avec SoX (Vitesse + Tonalité)
+    sox "$RAW_WAV" "$FINAL_WAV" tempo $SPEED pitch $PITCH 2>/dev/null
     
-    rm -f "$TEMP_WAV"
+    # 3. Lecture du fichier traité
+    aplay -D plughw:$SOUND_CARD_IDX,0 "$FINAL_WAV" 2>/dev/null
+    
+    # Nettoyage
+    rm -f "$RAW_WAV" "$FINAL_WAV"
 
 else
-    # Fallback sur Espeak si Pico n'est pas là
-    if ! [ -x "$(command -v espeak)" ]; then
-        echo 'Erreur : ni pico2wave ni espeak installés.' >&2
-        exit 1
-    fi
+    # Fallback Espeak (lui a des options natives)
     espeak -s 160 -v fr "$@" --stdout | aplay -D plughw:$SOUND_CARD_IDX,0 2>/dev/null
 fi
