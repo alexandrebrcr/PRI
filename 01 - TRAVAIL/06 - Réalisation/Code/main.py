@@ -202,8 +202,8 @@ def main():
                 
                 distance = ultrasonic_sensor.get_distance()
                 
-                if distance is not None and distance < 200:
-                    # Obstacle à moins de 2m -> On regarde ce que c'est
+                if distance is not None and distance < 400:
+                    # Obstacle à moins de 4m -> On regarde ce que c'est
                     
                     # On active la détection caméra
                     detections = camera.get_detections()
@@ -228,7 +228,7 @@ def main():
                         if found_objects:
                             # C'est un objet connu
                             phrase = ", ".join(found_objects)
-                            # On ajoute la distance à la phrase: "Chaise devant 150"
+                            # On ajoute la distance à la phrase: "Chaise 150"
                             full_msg = f"{phrase} {format_distance_message(distance)}"
                             
                             print(f"[MIXTE] {full_msg}")
