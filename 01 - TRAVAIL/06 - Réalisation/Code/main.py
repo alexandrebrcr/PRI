@@ -1,10 +1,8 @@
 # main.py
 # Programme principal de la Canne Blanche
-# Gère 3 modes : 
-# 1. Marche : Détection d'obstacles par ultrasons (< 2m)
-# 2. Exploration : Reconnaissance de tous les vus objets par caméra
-# 3. Mixte : Ultrasons + Caméra (< 2m) uniquement en face de l'utilisateur
+# Modes : MARCHE, EXPLORATION, MIXTE
 
+# --- Imports ---
 import time
 import signal
 import sys
@@ -14,279 +12,168 @@ from camera import Camera
 from sound import Sound
 from ultrasonic import UltrasonicSensor
 
-def format_distance_message(distance_cm): 
-    """
-    Formate le message vocal pour la distance.
-    :param distance_cm: Distance en centimètres.
-    :return: Chaîne de caractères à prononcer (ex: "150")
-    """
-    return f"{int(round(distance_cm))}"
+# --- Helpers ---
+def format_dist(d): 
+    """Formate la distance pour le TTS (ex: 150)"""
+    return f"{int(round(d))}"
 
 def main():
-    """
-    Boucle principale du programme.
-    """
     print("Initialisation du système...")
-    
-    # 1. Initialisation des composants
-    # Bouton sur GPIO 11
+
+    # --- Initialisation des Composants ---
+    # On groupe l'initialisation pour la clarté et la gestion d'erreur
     try:
         button = Button(button_pin=11)
-    except Exception as e:
-        print(f"Erreur init bouton: {e}")
-        return
-
-    # Vibreur sur GPIO 13
-    try:
         vibration_motor = Vibration(vibration_pin=13)
+        ultrasonic_sensor = UltrasonicSensor(port="/dev/ttyTHS1", baudrate=9600)
+        sound = Sound(script_path="./text_to_speech.sh")
+        
+        # Caméra (peut être le point de blocage, gérer séparément si besoin)
+        camera = Camera(model="ssd-inception-v2")
+        
+        # Délai post-boot pour l'audio
+        time.sleep(2)
     except Exception as e:
-        print(f"Erreur init vibreur: {e}")
+        print(f"ERREUR FATALE INIT: {e}")
         return
 
-    # Capteur Ultrason sur le port série
-    ultrasonic_sensor = UltrasonicSensor(port="/dev/ttyTHS1", baudrate=9600)
-    
-    # Module Son
-    sound = Sound(script_path="./text_to_speech.sh")
-
-    # Caméra AI - Modèle Inception V2
-    camera = Camera(model="ssd-inception-v2")
-
-    # On attend un peu que le système audio soit vraiment prêt (post-boot)
-    time.sleep(2)
-
-    # 2. Définition des modes
-    modes = ["MARCHE", "EXPLORATION", "MIXTE"]
-    current_mode_index = 0
+    # --- Configuration ---
+    MODES = ["MARCHE", "EXPLORATION", "MIXTE"]
+    curr_mode_idx = 0
     
     sound.speak("Système démarré. Mode Marche.", priority=True)
-    sound.speak("Trois modes sont disponibles, marche, exploration et mixte. Veuillez presser le bouton pour passer d'un mode à l'autre. Les distances sont exprimées en centimètres", priority=True)
-    print("Système démarré. Mode Marche.")
+    sound.speak("Trois modes disponibles. Pressez le bouton pour changer.", priority=True)
+    print("Système démarré. Mode: MARCHE")
 
-    # Variable de contrôle de la boucle principale
+    # --- Gestion Arrêt (SIGTERM/SIGINT) ---
     running = True
-
-    # Gestion propre de l'arrêt via systemctl (SIGTERM)
-    def signal_handler(signum, frame):
-        # On passe simplement la variable à False pour finir la boucle proprement
+    def stop_handler(sig, frame):
         nonlocal running
         running = False
-        print("\nSignal d'arrêt reçu. Fin de la boucle en cours...")
-        
-    signal.signal(signal.SIGTERM, signal_handler)
-    # On capture SIGINT (Ctrl+C)
-    signal.signal(signal.SIGINT, signal_handler)
-
-    # Variables de suivi temporel
-    last_vocal_announce_time = 0.0
-    last_vibration_time = 0.0
-    last_mode_change_time = 0.0 
-    vibration_pattern_state = 0 # 0=Long, 1=Court
+        print("\nArrêt demandé...")
     
-    def gerer_vibration_radar(dist_cm, current_time):
-        """Gestion progressive de la vibration façon radar de recul"""
-        nonlocal last_vibration_time, vibration_pattern_state
-        
-        if dist_cm < 50:
-            # DANGER IMMÉDIAT (< 50cm) : Pattern rapide
-            
-            if vibration_pattern_state == 0:
-                # Etape 0 : Vibration Longue
-                if current_time - last_vibration_time > 0.2:
-                    vibration_motor.vibrate(0.35)
-                    last_vibration_time = current_time
-                    vibration_pattern_state = 1
-                    
-            else:
-                # Etape 1 : Vibration Courte
-                if current_time - last_vibration_time > 0.45:
-                    vibration_motor.vibrate(0.10)
-                    last_vibration_time = current_time
-                    vibration_pattern_state = 0
-                
-        elif dist_cm < 200:
-            # APPROCHE (50cm - 2m) : Fréquence proportionnelle
-            
-            vibration_pattern_state = 0
-            ratio = (dist_cm - 50) / 150.0
-            interval = 0.3 + (ratio * 1.2)
-            
-            if current_time - last_vibration_time > interval:
-                vibration_motor.vibrate(0.1)
-                last_vibration_time = current_time
+    signal.signal(signal.SIGTERM, stop_handler)
+    signal.signal(signal.SIGINT, stop_handler)
 
+    # --- Variables d'État ---
+    last_vocal = 0.0
+    last_vib = 0.0
+    last_mode_chg = 0.0 
+    vib_state = 0 # Pattern vibration (0=Long, 1=Court)
+
+    # --- Fonction Locale : Vibration Radar ---
+    def handle_vibration_logic(mode, dist, now):
+        nonlocal last_vib, vib_state
+        if mode == 0: # MARCHE
+            if dist >= 200: return # Pas de vibration au-delà de 2m
+        elif mode == 1: # MIXTE
+            if dist >= 400: return # Pas de vibration au-delà de 4m
+
+        # Zone Danger (< 50cm) -> Pattern alerte binaire
+        if dist < 50:
+            if vib_state == 0 and (now - last_vib > 0.2):
+                vibration_motor.vibrate(0.35); last_vib = now; vib_state = 1
+            elif vib_state == 1 and (now - last_vib > 0.45):
+                vibration_motor.vibrate(0.10); last_vib = now; vib_state = 0
+        
+        # Zone Approche (50cm-2m) -> Fréquence proportionnelle
+        else:
+            vib_state = 0
+            # Calcul intervalle (plus proche = plus fréquent)
+            interval = 0.3 + ((dist - 50) / 150.0) * 1.2
+            if now - last_vib > interval:
+                vibration_motor.vibrate(0.1); last_vib = now
+
+    # --- Boucle Principale ---
     try:
         while running:
-            # ---------------------------------------------------------
-            # 1. GESTION DU CHANGEMENT DE MODE (PRIORITAIRE)
-            # ---------------------------------------------------------
+            now = time.time()
+            
+            # 1. Gestion du Bouton (Prioritaire)
             if button.wait_for_press():
-                # On empêche de changer de mode trop vite (moins de 2s)
-                if time.time() - last_mode_change_time < 2.0:
-                    time.sleep(0.1)
-                    continue
-
-                # On passe au mode suivant
-                current_mode_index = (current_mode_index + 1) % len(modes)
-                current_mode = modes[current_mode_index]
-                
-                # Annonce du nouveau mode (PRIORITAIRE)
-                sound.speak(f"Mode {current_mode}", priority=True)
-                print(f" changement de mode -> {current_mode}")
-                
-                last_mode_change_time = time.time()
-                
-                # Petite pause pour éviter de changer 2 fois si appui très long
-                time.sleep(0.5)
+                if now - last_mode_chg > 2.0:
+                    curr_mode_idx = (curr_mode_idx + 1) % len(MODES)
+                    mode = MODES[curr_mode_idx]
+                    
+                    sound.speak(f"Mode {mode}", priority=True)
+                    print(f"Mode -> {mode}")
+                    last_mode_chg = now
+                    time.sleep(0.5)
                 continue
 
-            # ---------------------------------------------------------
-            # 2. COMPORTEMENT SELON LE MODE
-            # ---------------------------------------------------------
-            now = time.time()
-            current_mode = modes[current_mode_index]
+            # 2. Logique des Modes
+            mode = MODES[curr_mode_idx]
+            dist = ultrasonic_sensor.get_distance()
 
-            if current_mode == "MARCHE":
-                # --- MODE MARCHE : Ultrasons Uniquement (< 2m) ---
-                
-                distance = ultrasonic_sensor.get_distance()
-                
-                if distance is not None:
-                    # Logique demandée : "Obstacle 2m" si < 2m.
-                    if distance < 200: # Distance inférieure à 2 mètres
-                        
-                        # Gestion du délai entre les annonces vocales (toutes les 1s)
-                        if now - last_vocal_announce_time > 1:
-                            msg = format_distance_message(distance)
-                            print(f"[MARCHE] {msg}")
-                            sound.speak(msg)
-                            last_vocal_announce_time = now
-                        
-                        # Retour Haptique Proportionnel
-                        gerer_vibration_radar(distance, now)
+            if mode == "MARCHE":
+                # --- Mode Marche ---
+                if dist is not None and dist < 200:
+                    if now - last_vocal > 1:
+                        sound.speak(format_dist(dist))
+                        last_vocal = now
+                    handle_vibration_logic(0, dist, now)
 
-                    else:
-                        pass
-                
-                time.sleep(0.1) # Petite pause pour ne pas surcharger le CPU
+            elif mode == "EXPLORATION":
+                # --- Mode Exploration ---
+                dets = camera.get_detections()
+                if now - last_vocal > 2 and dets:
+                    objs = []
+                    for d in dets:
+                        desc = f"{camera.get_class_name(d.ClassID)} {camera.get_object_position(d)}"
+                        if desc not in objs: objs.append(desc)
+                    
+                    msg = ", ".join(objs)
+                    print(f"[EXPLO] {msg}")
+                    sound.speak(msg)
+                    last_vocal = now
 
-            elif current_mode == "EXPLORATION":
-                # --- MODE EXPLORATION : Caméra Uniquement ---
-                
-                detections = camera.get_detections()
-                
-                # On ne parle que toutes les 2 secondes pour ne pas saturer
-                if now - last_vocal_announce_time > 2:
-                    if detections:
-                        # Objet avec la plus grande confiance ou le premier
-                        found_objects = []
-                        for det in detections:
-                            name = camera.get_class_name(det.ClassID)
-                            pos = camera.get_object_position(det)
-                            desc = f"{name} {pos}"
-                            
-                            if desc not in found_objects: 
-                                found_objects.append(desc)
+            elif mode == "MIXTE":
+                # --- Mode Mixte ---
+                if dist is not None and dist < 400:
+                    dets = camera.get_detections()
+                    
+                    if now - last_vocal > 1:
+                        # Filtrage : Uniquement objets 'devant'
+                        objs = []
+                        if dets:
+                            for d in dets:
+                                if camera.get_object_position(d) == "devant":
+                                    name = camera.get_class_name(d.ClassID)
+                                    if name not in objs: objs.append(name)
                         
-                        if found_objects:
-                            # Construit la phrase :
-                            phrase = ", ".join(found_objects)
-                            print(f"[EXPLORATION] {phrase}")
-                            sound.speak(phrase)
-                            last_vocal_announce_time = now
-                    else:
-                        pass
-
-            elif current_mode == "MIXTE":
-                # --- MODE MIXTE : Ultrasons + Caméra si obstacle proche ---
-                
-                distance = ultrasonic_sensor.get_distance()
-                
-                if distance is not None and distance < 400:
-                    # Obstacle à moins de 4m -> On regarde ce que c'est
+                        # Construction message : "Chaise, Table 150" ou juste "150"
+                        msg = f"{', '.join(objs)} {format_dist(dist)}" if objs else format_dist(dist)
+                        print(f"[MIXTE] {msg}")
+                        sound.speak(msg)
+                        last_vocal = now
                     
-                    # On active la détection caméra
-                    detections = camera.get_detections()
-                    
-                    found_objects = []
-                    if detections:
-                        for det in detections:
-                            name = camera.get_class_name(det.ClassID)
-                            pos = camera.get_object_position(det)
-                            
-                            # FILTRE MODE MIXTE : On ne garde que ce qui est devant pour distance avec ultrasons cohérente
-                            if pos != "devant":
-                                continue
-                                
-                            desc = f"{name}"
-                            
-                            if desc not in found_objects:
-                                found_objects.append(desc)
-                    
-                    # Gestion vocale
-                    if now - last_vocal_announce_time > 1:
-                        if found_objects:
-                            # C'est un objet connu
-                            phrase = ", ".join(found_objects)
-                            # On ajoute la distance à la phrase: "Chaise 150"
-                            full_msg = f"{phrase} {format_distance_message(distance)}"
-                            
-                            print(f"[MIXTE] {full_msg}")
-                            sound.speak(full_msg)
-                        else:
-                            # Pas d'objet connu -> "150"
-                            msg = format_distance_message(distance)
-                            print(f"[MIXTE] {msg}")
-                            sound.speak(msg)
-                        
-                        last_vocal_announce_time = now
-                    
-                    # Vibration (Sécurité toujours active en mixte)
-                    gerer_vibration_radar(distance, now)
+                    handle_vibration_logic(1, dist, now)
                 
                 else:
-                    # Si > 2m, on vide le buffer caméra pour éviter le lag (image fraîche)
-                    camera.get_detections() 
-                    pass
+                    # Flush buffer caméra si loin pour garder l'image à jour
+                    camera.get_detections()
 
-                time.sleep(0.1)
+            # Petite pause CPU
+            time.sleep(0.1)
 
     except KeyboardInterrupt:
-        print("Arrêt par l'utilisateur.")
+        pass # Arrêt Ctrl+C
     
     finally:
-        # Nettoyage propre
-        print("Nettoyage des ressources...")
+        # --- Nettoyage ---
+        print("Fermeture du système...")
         sound.speak("Arrêt du système", priority=True)
-        # On laisse un peu de temps à la voix de finir
-        time.sleep(2.0) 
+        time.sleep(2.0)
         
-        # On nettoie d'abord les périphériques robustes
-        try:
-            button.cleanup()
-        except: pass
-            
-        try:
-            vibration_motor.cleanup()
-        except: pass
-            
-        try:
-            ultrasonic_sensor.cleanup()
-        except: pass
+        # Cleanup sécurisé
+        for obj in [button, vibration_motor, ultrasonic_sensor, sound]:
+            if obj: 
+                try: obj.cleanup()
+                except: pass
         
-        try:
-            sound.cleanup()
-        except: pass
-
-        # On garde la caméra pour la fin car elle risque de SegFault
-        try:
-            if 'camera' in locals():
-                print("Arrêt de la caméra...")
-                camera.cleanup()
-        except Exception as e:
-            print(f"Erreur fermeture caméra (ignorée): {e}")
-        except:
-            print("Crash critique fermeture caméra (ignoré)")
+        if 'camera' in locals():
+            try: camera.cleanup()
+            except: pass
 
 if __name__ == "__main__":
     main()
