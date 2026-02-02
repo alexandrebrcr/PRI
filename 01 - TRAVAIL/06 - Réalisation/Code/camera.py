@@ -1,27 +1,28 @@
 # camera.py
-# Ce fichier gère la détection d'objets à partir de la caméra connectée à la Jetson Nano.
-# Il utilise la bibliothèque Jetson Inference pour effectuer les détections et
-# Jetson Utils pour capturer les images depuis la caméra.
+# Gestion de la caméra AI et de l'inférence (Jetson Inference)
+# Modèles supportés : SSD-Mobilenet-v2, SSD-Inception-v2
 
+# --- Imports ---
+import time
 from jetson_inference import detectNet
 from jetson_utils import videoSource
 
 class Camera:
-
-    def __init__(self, model="ssd-inception-v2", threshold=0.5): #mobilenet
-        """
-        Initialise la caméra et le modèle de détection.
-        :param model: Modèle utilisé pour détecter les objets (par défaut : "ssd-mobilenet-v2").
-        :param threshold: Seuil minimum de confiance pour les détections.
-        """
-        # Argv --headless permet de lancer le script sans interface graphique
+    
+    def __init__(self, model="ssd-inception-v2", threshold=0.5): #Ancien modèle: mobilnet
+        # Argv --headless pour désactiver l'affichage graphique (GUI)
         argv = ['--headless']
+        
+        # 1. Chargement du réseau de neurones
+        print(f"Chargement du modèle {model}...")
         self.net = detectNet(model, threshold=threshold, argv=argv)
         
-        # Ajout de --input-flip=rotate-180 pour corriger la caméra à l'envers
-        self.camera = videoSource("csi://0", argv=argv + ["--input-width=1280", "--input-height=720", "--input-rate=30"])
+        # 2. Ouverture de la caméra CSI (Raspberry Pi Camera v2)
+        src_str = "csi://0"
+        opt = argv + ["--input-width=1280", "--input-height=720", "--input-rate=30"]
+        self.camera = videoSource(src_str, argv=opt)
 
-        # Dictionnaire de traduction Anglais -> Français pour le dataset COCO (91 classes)
+        # 3. Dictionnaire de traduction COCO (91 classes)
         self.translations = {
             "person": "personne", "bicycle": "vélo", "car": "voiture", "motorcycle": "moto",
             "airplane": "avion", "bus": "bus", "train": "train", "truck": "camion", "boat": "bateau",
@@ -40,76 +41,59 @@ class Camera:
         }
 
     def get_detections(self):
-        """
-        Capture une image depuis la caméra et détecte les objets.
-        :return: Une liste des objets détectés ou une liste vide si aucune image n'est capturée.
-        """
-        img = self.camera.Capture()  # Capture une image.
+        img = self.camera.Capture()
         if img is None:
-            return []  # Si aucune image n'est capturée, retourne une liste vide.
+            return []
         
-        detections = self.net.Detect(img)  # Applique le modèle de détection sur l'image.
+        # Inférence (Détection)
+        detections = self.net.Detect(img)
         return detections
 
+    def clear_buffer(self):
+        self.camera.Capture()
+
     def get_class_name(self, class_id):
-        """
-        Récupère le nom d'une classe d'objet détectée à partir de son ID.
-        :param class_id: L'ID de la classe d'objet détectée.
-        :return: Le nom de la classe correspondante (traduit en français si possible).
-        """
         english_name = self.net.GetClassDesc(class_id)
-        # On retourne la traduction si elle existe, sinon le nom anglais original
         return self.translations.get(english_name.lower(), english_name)
 
     def get_object_position(self, detection):
-        """
-        Détermine la position horizontale de l'objet dans l'image (1280px de large).
-        :param detection: Objet detection renvoyé par jetson_inference
-        :return: "à gauche", "à droite" ou "devant"
-        """
         center_x = detection.Center[0]
-        width = 1280 # Largeur définie dans le constructeur
+        w = 1280
         
-        # On découpe l'image en 3 tiers
-        if center_x < (width / 3):
+        if center_x < (w / 3):
             return "à gauche"
-        elif center_x > (width * 2 / 3):
+        elif center_x > (w * 2 / 3):
             return "à droite"
         else:
             return "devant"
 
     def cleanup(self):
-        """
-        Libère les ressources utilisées par la caméra.
-        """
-        self.camera.Close()
+        if self.camera:
+            self.camera.Close()
 
+# --- Test Unitaire ---
 if __name__ == "__main__":
-    """
-    Test de la caméra et des détections d'objets.
-    Affiche dans le terminal les objets détectés avec leur niveau de confiance.
-    """
-    import time
-
-    cam = Camera()  # Initialise la caméra avec le modèle par défaut.
-    print("Test de la caméra")
-
+    print("--- TEST CAMERA ---")
     try:
+        cam = Camera()
+        print("Caméra initialisée. Début capture (CTRL+C pour arrêter)...")
+        
         while True:
-            # Récupère les objets détectés.
-            detections = cam.get_detections()
-            if detections:
-                for detection in detections:
-                    # Affiche le nom et la confiance pour chaque objet détecté.
-                    class_name = cam.get_class_name(detection.ClassID)
-                    confidence = detection.Confidence
-                    print(f"Objet détecté : {class_name} avec confiance {confidence:.2f}")
+            t0 = time.time()
+            dets = cam.get_detections()
+            dt = time.time() - t0
+            
+            if dets:
+                print(f"[{dt:.3f}s] {len(dets)} objets :")
+                for d in dets:
+                    name = cam.get_class_name(d.ClassID)
+                    pos = cam.get_object_position(d)
+                    conf = d.Confidence
+                    print(f" - {name} ({pos}) [{conf:.2f}]")
             else:
-                print("Aucun objet détecté.")
-            time.sleep(1)  # Pause d'une seconde entre chaque détection.
+                print(f"[{dt:.3f}s] Rien.")
+                        
     except KeyboardInterrupt:
-        # Permet d'arrêter proprement le programme avec Ctrl + C.
-        print("Programme interrompu.")
+        pass
     finally:
-        # Libère les ressources de la caméra à la fin.
-        cam.cleanup()
+        if 'cam' in locals(): cam.cleanup()

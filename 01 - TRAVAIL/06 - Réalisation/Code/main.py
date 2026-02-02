@@ -150,8 +150,8 @@ def main():
                     handle_vibration_logic(1, dist, now)
                 
                 else:
-                    # Flush buffer caméra si loin pour garder l'image à jour
-                    camera.get_detections()
+                    # Méthode pour garder l'image à jour et éviter le lag
+                    camera.clear_buffer()
 
             # Petite pause CPU
             time.sleep(0.1)
