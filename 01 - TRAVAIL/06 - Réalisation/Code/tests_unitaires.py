@@ -9,7 +9,6 @@ from vibration import Vibration
 from ultrasonic import UltrasonicSensor
 from sound import Sound
 from camera import Camera
-from main import format_distance_message
 
 class TestMaterielReel(unittest.TestCase):
 

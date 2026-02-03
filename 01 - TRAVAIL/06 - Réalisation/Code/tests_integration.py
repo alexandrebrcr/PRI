@@ -8,7 +8,10 @@ from vibration import Vibration
 from ultrasonic import UltrasonicSensor
 from sound import Sound
 from camera import Camera
-from main import format_distance_message
+
+def format_distance_message(dist):
+    """Helper local pour les tests"""
+    return f"{int(round(dist))}"
 
 class TestIntegrationReel(unittest.TestCase):
     """
