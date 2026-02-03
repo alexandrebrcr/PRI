@@ -64,9 +64,9 @@ def main():
     # --- Fonction Locale : Vibration Radar ---
     def handle_vibration_logic(mode, dist, now):
         nonlocal last_vib, vib_state
-        if mode == 0: # MARCHE
+        if mode == "MARCHE":
             if dist >= 200: return # Pas de vibration au-delà de 2m
-        elif mode == 1: # MIXTE
+        elif mode == MIXTE:
             if dist >= 400: return # Pas de vibration au-delà de 4m
 
         # Zone Danger (< 50cm) -> Pattern alerte binaire
@@ -111,7 +111,7 @@ def main():
                     if now - last_vocal > 1:
                         sound.speak(format_dist(dist))
                         last_vocal = now
-                    handle_vibration_logic(0, dist, now)
+                    handle_vibration_logic(dist, now)
 
             elif mode == "EXPLORATION":
                 # --- Mode Exploration ---
@@ -123,7 +123,7 @@ def main():
                         if desc not in objs: objs.append(desc)
                     
                     msg = ", ".join(objs)
-                    print(f"[EXPLO] {msg}")
+                    print(f"[EXPLORATION] {msg}")
                     sound.speak(msg)
                     last_vocal = now
 
@@ -147,7 +147,7 @@ def main():
                         sound.speak(msg)
                         last_vocal = now
                     
-                    handle_vibration_logic(1, dist, now)
+                    handle_vibration_logic(dist, now)
                 
                 else:
                     # Méthode pour garder l'image à jour et éviter le lag

@@ -2,8 +2,8 @@
 
 SOUND_CARD_IDX=2
 # Réglages de la voix
-SPEED="1.5"    # 1.0 = Normal
-PITCH="-200"   # 0 = Normal
+SPEED="1.4"    # 1.0 = Normal
+PITCH="-190"   # 0 = Normal
 
 # Vérifier si pico2wave est installé
 if [ -x "$(command -v pico2wave)" ]; then
