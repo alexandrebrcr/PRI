@@ -1,5 +1,5 @@
 # bouton.py
-# Gestion du bouton poussoir (GPIO 11) - Optimisé Interruptions
+# Gestion du bouton poussoir (GPIO 11)
 
 import Jetson.GPIO as GPIO
 import time
@@ -54,3 +54,18 @@ class Button:
         try: GPIO.remove_event_detect(self.button_pin)
         except: pass
         GPIO.cleanup(self.button_pin)
+
+if __name__ == "__main__":
+    print("--- Test du BOUTON ---")
+    print("Appuyez sur le bouton (CTRL+C pour quitter)...")
+    try:
+        btn = Button()
+        while True:
+            if btn.wait_for_press():
+                print(">>> Bouton APPUYÉ !")
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("\nArrêt du test.")
+    finally:
+        if 'btn' in locals():
+            btn.cleanup()

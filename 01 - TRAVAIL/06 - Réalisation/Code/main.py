@@ -2,7 +2,6 @@
 # Programme principal de la Canne Blanche
 # Modes : MARCHE, EXPLORATION, MIXTE
 
-# --- Imports ---
 import time
 import signal
 import sys

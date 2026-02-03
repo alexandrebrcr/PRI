@@ -1,5 +1,5 @@
-# vibration_optimised.py
-# Ce fichier gère le vibreur avec un thread
+# vibration.py
+# Ce fichier gère le vibreur
 
 import Jetson.GPIO as GPIO
 import time

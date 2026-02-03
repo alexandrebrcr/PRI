@@ -1,8 +1,7 @@
 # camera.py
-# Gestion de la caméra AI et de l'inférence (Jetson Inference)
+# Gestion de la caméra AI et de l'inférence
 # Modèles supportés : SSD-Mobilenet-v2, SSD-Inception-v2
 
-# --- Imports ---
 import time
 from jetson_inference import detectNet
 from jetson_utils import videoSource

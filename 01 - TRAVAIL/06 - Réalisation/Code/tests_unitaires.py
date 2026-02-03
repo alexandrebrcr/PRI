@@ -113,7 +113,6 @@ class TestMaterielReel(unittest.TestCase):
         cam = Camera(model="ssd-inception-v2")
         
         print("Capture d'une image test...")
-        # On essaie de récupérer une détection, même vide, ça prouve que le pipeline marche
         try:
             dets = cam.get_detections()
             print(f"Objets détectés instantanément : {len(dets)}")
@@ -127,5 +126,4 @@ class TestMaterielReel(unittest.TestCase):
         cam.cleanup()
 
 if __name__ == '__main__':
-    # On force l'affichage verbeux pour voir les directives
     unittest.main(verbosity=2)

@@ -136,7 +136,7 @@ class TestIntegrationReel(unittest.TestCase):
         while time.time() < timeout:
             if self.btn.wait_for_press():
                 print("Bouton détecté !")
-                self.sound.speak("Bouton reçu. Bravo.", priority=True)
+                self.sound.speak("Bouton reçu.", priority=True)
                 pressed = True
                 break
             time.sleep(0.1)

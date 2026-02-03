@@ -21,14 +21,12 @@ def main():
     print("Démarrage du flux...")
 
     while display.IsStreaming():
-        # Capture de l'image
         img = camera.Capture()
         
         if img is None:
             continue
 
         # Détection
-        # overlay="box,labels,conf" dessine les cadres, les noms et les % de confiance
         detections = net.Detect(img, overlay="box,labels,conf")
 
         # Affichage
