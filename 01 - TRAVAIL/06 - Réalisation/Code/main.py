@@ -62,11 +62,11 @@ def main():
     vib_state = 0 # Pattern vibration (0=Long, 1=Court)
 
     # --- Fonction Locale : Vibration Radar ---
-    def handle_vibration_logic(mode, dist, now):
+    def handle_vibration_logic(dist, now):
         nonlocal last_vib, vib_state
         if mode == "MARCHE":
             if dist >= 200: return # Pas de vibration au-delà de 2m
-        elif mode == MIXTE:
+        elif mode == "MIXTE":
             if dist >= 400: return # Pas de vibration au-delà de 4m
 
         # Zone Danger (< 50cm) -> Pattern alerte binaire
@@ -109,7 +109,9 @@ def main():
                 # --- Mode Marche ---
                 if dist is not None and dist < 200:
                     if now - last_vocal > 1:
-                        sound.speak(format_dist(dist))
+                        msg = format_dist(dist)
+                        print(f"[MARCHE] {msg}")
+                        sound.speak(msg)
                         last_vocal = now
                     handle_vibration_logic(dist, now)
 
