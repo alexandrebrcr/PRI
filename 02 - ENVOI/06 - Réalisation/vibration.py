@@ -1,55 +1,60 @@
 # vibration.py
-# Ce fichier gère le fonctionnement du vibreur connecté sur le pin 13
+# Ce fichier gère le vibreur
 
 import Jetson.GPIO as GPIO
 import time
+import threading
 
 class Vibration:
 
     def __init__(self, vibration_pin=13):
-        """
-        Initialisationd du vibreur
-        :param vibration_pin: GPIO utilisé pour contrôler le vibreur (pin 13)
-        """
+        """Initialisation du vibreur"""
         self.vibration_pin = vibration_pin  
-        GPIO.setmode(GPIO.BOARD)  # Configuration des broches en mode BOARD (numérotation physique)
-        GPIO.setup(self.vibration_pin, GPIO.OUT, initial=GPIO.LOW)  # Configure la broche en sortie, initialisée à LOW
-        print(f"Vibreur configuré sur le pin {self.vibration_pin}")
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.vibration_pin, GPIO.OUT, initial=GPIO.LOW)
+        self._current_thread = None
 
     def vibrate(self, duration):
         """
-        Active le vibreur pour une durée donnée
-        :param duration: Durée donnée en seconde
+        Lance une vibration de 'duration' secondes en arrière-plan.
+        Ne bloque PAS l'exécution du programme principal.
         """
-        print(f"Vibration activée pendant {duration} seconde(s).")
-        GPIO.output(self.vibration_pin, GPIO.HIGH)  # Active le vibreur
-        time.sleep(duration)  # Maintient le vibreur activé pendant la durée donnée
-        GPIO.output(self.vibration_pin, GPIO.LOW)  # Désactive le vibreur
+        # Si ça vibre déjà, on ignore la nouvelle demande pour ne pas 'empiler' les threads
+        if self._current_thread is not None and self._current_thread.is_alive():
+            return
+
+        # On lance le travail dans un thread séparé
+        self._current_thread = threading.Thread(
+            target=self._vibrate_worker, 
+            args=(duration,), 
+            daemon=True
+        )
+        self._current_thread.start()
+
+    def _vibrate_worker(self, duration):
+        """La tâche réelle qui s'exécute en parallèle"""
+        try:
+            GPIO.output(self.vibration_pin, GPIO.HIGH)
+            time.sleep(duration) 
+        finally:
+            GPIO.output(self.vibration_pin, GPIO.LOW)
 
     def cleanup(self):
-        """
-        Libère les ressources GPIO après utilisation.
-        """
+        """Nettoie le GPIO proprement"""
+        try:
+            # On s'assure que le vibreur est éteint
+            GPIO.output(self.vibration_pin, GPIO.LOW)
+            if self._current_thread and self._current_thread.is_alive():
+                self._current_thread.join(timeout=0.5)
+        except Exception:
+            pass
         GPIO.cleanup(self.vibration_pin)
-        print("GPIO du vibreur nettoyé")
+        print("GPIO Vibreur libéré.")
 
-# Exemple d'utilisation
 if __name__ == "__main__":
-    """
-    Test du vibreur pendant 0.5 seconde, puis attend 1 seconde.
-    """
-    try:
-        # Initialisation du vibreur sur le GPIO 13
-        vibreur = Vibration(vibration_pin=13)
-        print("Test du vibreur")
-
-        # Boucle de test pour activer et désactiver le vibreur
-        while True:
-            vibreur.vibrate(0.5)  # Active le vibreur pendant 0.5 seconde
-            time.sleep(1)  # Attend 1 seconde avant de réactiver
-    except KeyboardInterrupt:
-        # Arrêt propre en cas d'interruption (Ctrl + C)
-        print("Programme interrompu.")
-    finally:
-        # Nettoie les ressources GPIO
-        vibreur.cleanup()
+    v = Vibration()
+    print("Test de la vibration.")
+    v.vibrate(2.0)
+    print("Ce message doit Apparaitre AVANT la fin de la vibration !)")
+    time.sleep(3)
+    v.cleanup()

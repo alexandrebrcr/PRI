@@ -1,21 +1,25 @@
 #!/bin/bash
 
-#permission au port ths1
+# === SCRIPT DE DEMARRAGE ===
 
-sleep 5
+# Audio ALSA pour éviter le crash PulseAudio
+export AUDIODRIVER=alsa
+export ALSA_CARD=Device
+# On empêche PulseAudio de démarrer tout seul
+export PULSE_SERVER=
 
-/bin/chmod 666 /dev/ttyTHS1
+# Configuration du projet
+PROJECT_DIR="/home/canneblancheintelligente/Documents/PRI_ALEXANDRE/PRI/01 - TRAVAIL/06 - Réalisation/Code"
 
-# lancer les codes
-python /home/canneblancheintelligente/Documents/PRI_IRFAN/ultrasonic.py & ultrasonic_pid=$!
+# Permissions port série (Ultrasons)
+if [ -e /dev/ttyTHS1 ]; then
+    sudo chmod 666 /dev/ttyTHS1
+fi
 
-# attendre 5sec
-sleep 4
+cd "$PROJECT_DIR" || exit 1
 
-#arret 
+# Droits d'exécution
+chmod +x text_to_speech.sh
 
-kill $ultrasonic_pid
-
-#lancement du main
-
-python /home/canneblancheintelligente/Documents/PRI_IRFAN/main.py
+# Lancement du programme PRINCIPAL
+python3 -u main.py > logs_canne.txt 2>&1
